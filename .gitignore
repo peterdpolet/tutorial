@@ -1,0 +1,34 @@
+# ── Secrets and local settings: never commit these ──────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── Node / Vue ──────────────────────────────────────────────────────
+node_modules/
+dist/
+
+# ── Django local data and uploads ───────────────────────────────────
+db.sqlite3
+media/
+staticfiles/
+
+# ── Docker local data (volumes live outside the repo, but just in case) ──
+postgres_data/
+*.sql
+*.dump
+
+# ── Editors, OS and scratch files ───────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.bak
+*.bak*
