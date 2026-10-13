@@ -1,0 +1,21 @@
+# Two containers built from the same Dockerfile.
+#   baked   : uses only what was copied into the image at build time
+#   mounted : same recipe, but ./site on your laptop is mounted over the top
+#
+# Host ports 8181 and 8182 (left side of each mapping) were chosen because
+# 8081 was already taken by another project. The right side (80) is nginx's
+# port INSIDE the container and never changes.
+services:
+  baked:
+    build: .
+    container_name: tutorial_baked
+    ports:
+      - "8181:80"
+
+  mounted:
+    build: .
+    container_name: tutorial_mounted
+    ports:
+      - "8182:80"
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
