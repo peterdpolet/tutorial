@@ -25,6 +25,11 @@ first, then build the thing that prevents it.
 
 ## Understand (about 5 minutes)
 
+0. Open the flow in VS Code first (see the top-level README), before any trace.
+   This is the map: click, form handler, API call, URL, view, the six steps.
+   Say what should happen. Then register with tracing on and reopen the flow:
+   the boxes that ran light up. For an unhappy path, the boxes after the
+   refusal stay dark. That is the whole idea of the series in one picture.
 1. Register `learner@example.com` / `Tut0rial-Pass!` with tracing on.
 2. `python manage.py show_trace`. Read it top to bottom beside `services.py`.
 3. Say what each `.` line (checkpoint) means:
@@ -69,14 +74,16 @@ happy-path tests pass, and it looks like harmless tidying. Then:
    accounts, one person. Trace both: step 2 said `taken=False` both times.
 2. Run the tests. Exactly one fails:
    `test_same_email_in_other_capitals_is_also_refused`.
-3. The failing test name points at step 2, but the cause is in step 1: the
+3. Open the flow for the second registration: step 2 lights up and the rest looks
+   normal. Nothing is dark, which is why this bug is hard to see.
+4. The failing test name points at step 2, but the cause is in step 1: the
    tidy step no longer produces one canonical spelling, so step 2 compares
    different strings. This is the moment to show how a trace shows where the
    behaviour leaves the map, and how a fix has to be checked against the flow.
-4. Ask an AI for a fix. Judge each proposal against the map. A fix in step 2
+5. Ask an AI for a fix. Judge each proposal against the map. A fix in step 2
    (case-insensitive lookup) hides the problem and leaves mixed-case addresses
    stored; the fix that matches the flow is to restore `.lower()` in step 1.
-5. Put it back: `patch -R -p1 < episodes/01-register/planted_bug.patch`, then
+6. Put it back: `patch -R -p1 < episodes/01-register/planted_bug.patch`, then
    rerun the tests (all green) and the double registration (second is refused).
 
 ## Before filming

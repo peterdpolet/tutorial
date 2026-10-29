@@ -530,6 +530,40 @@ class DevAuthorisePolicyTests(TestCase):
 
         self.assertFalse(dev_authorise(anon_request("/api/tracker/runs/")))
 
+    @override_settings(TRACKER_DEV_ALLOW_VIEWER=True)
+    def test_viewer_can_be_opened_for_reading_when_asked(self):
+        from .policy import dev_authorise
+
+        self.assertTrue(dev_authorise(anon_request("/api/tracker/runs/")))
+        self.assertTrue(dev_authorise(anon_request("/api/tracker/graph/p/flow/")))
+
+    @override_settings(TRACKER_DEV_ALLOW_VIEWER=True)
+    def test_viewer_is_never_open_for_writing(self):
+        from django.test import RequestFactory
+
+        from .policy import dev_authorise
+
+        req = RequestFactory().post("/api/tracker/runs/", REMOTE_ADDR="127.0.0.1")
+        req.user = SimpleNamespace(is_authenticated=False, is_staff=False)
+        self.assertFalse(dev_authorise(req))
+
+    @override_settings(TRACKER_DEV_ALLOW_VIEWER=True, DEBUG=False)
+    def test_viewer_stays_closed_when_debug_is_off(self):
+        from .policy import dev_authorise
+
+        self.assertFalse(dev_authorise(anon_request("/api/tracker/runs/")))
+
+    @override_settings(TRACKER_DEV_ALLOW_VIEWER=True)
+    def test_viewer_stays_closed_to_other_machines(self):
+        from .policy import dev_authorise
+
+        self.assertFalse(dev_authorise(anon_request("/api/tracker/runs/", REMOTE_ADDR="203.0.113.9")))
+
+    def test_viewer_is_closed_unless_switched_on(self):
+        from .policy import dev_authorise
+
+        self.assertFalse(dev_authorise(anon_request("/api/tracker/runs/")))
+
     def test_logged_in_staff_still_allowed_anywhere(self):
         from .policy import dev_authorise
 
@@ -569,6 +603,11 @@ class AnonymousRegisterTraceTests(TestCase):
     def test_not_traced_when_debug_off(self):
         self.client.get("/api/auth/register/", **ON, **ANON)
         self.assertEqual(TraceRun.objects.count(), 0)
+
+    @override_settings(TRACKER_DEV_ALLOW_VIEWER=True)
+    def test_anonymous_can_read_traces_when_the_viewer_door_is_open(self):
+        self.client.get("/api/auth/register/", **ON, **ANON)
+        self.assertEqual(self.client.get("/api/tracker/runs/", **ANON).status_code, 200)
 
     def test_anonymous_cannot_read_traces(self):
         self.client.get("/api/auth/register/", **ON, **ANON)

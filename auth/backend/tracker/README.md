@@ -183,6 +183,17 @@ prefix you listed. The trace viewer's own URLs are never opened, so anonymous
 visitors can still not read traces. Logged-in staff are allowed as before, and
 `TRACKER_ENABLED` plus the `X-Tracker: 1` header are still required.
 
+### Reading traces before login exists
+
+The trace viewer (the Flow tab and the VS Code extension) reads `/api/tracker/...`,
+which the default rule keeps for logged-in staff. In a project with no login yet,
+open that door too, for reading only:
+
+    TRACKER_DEV_ALLOW_VIEWER = True     # default False
+
+It needs the same two conditions (`DEBUG` on, caller is this machine) and answers
+GET/HEAD/OPTIONS only. Remove it once the project has logins.
+
 Redaction still applies: passwords, tokens and emails are blanked before
 anything is stored, including secrets carried in link query strings
 (`?token=...`, `?t=...`), which are found by the parameter name.

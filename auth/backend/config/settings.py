@@ -68,3 +68,7 @@ TRACKER_ENABLED = DEBUG
 # machine. It never opens the trace viewer itself.
 TRACKER_AUTHORISE = "tracker.policy.dev_authorise"
 TRACKER_DEV_ANON_PREFIXES = ["/api/auth/"]
+# The trace viewer (Flow view, VS Code extension) normally answers logged-in
+# staff only, and there is no login yet. This lets it be READ from this machine
+# while DEBUG is on. Delete it once the project has logins (episode 3).
+TRACKER_DEV_ALLOW_VIEWER = True
