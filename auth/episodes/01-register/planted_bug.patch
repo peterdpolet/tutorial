@@ -1,0 +1,11 @@
+--- a/backend/accounts/services.py	2026-10-29 14:35:48.499038102 +0000
++++ b/backend/accounts/services.py	2026-10-29 14:35:48.501355588 +0000
+@@ -45,7 +45,7 @@
+ 
+ @traced("clean_email")
+ def clean_email(*, email):
+-    email = (email or "").strip().lower()
++    email = (email or "").strip()
+     try:
+         validate_email(email)
+     except ValidationError:

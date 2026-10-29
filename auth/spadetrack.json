@@ -1,0 +1,7 @@
+{
+  "project": "auth-tutorial",
+  "backend": "backend",
+  "frontend": "frontend",
+  "apps": ["accounts"],
+  "api_clients": ["api"]
+}
