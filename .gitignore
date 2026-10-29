@@ -32,3 +32,6 @@ postgres_data/
 *.swp
 *.bak
 *.bak*
+
+# The tutorial workspace settings are part of the lesson
+!auth/.vscode/
