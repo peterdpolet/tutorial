@@ -1,0 +1,15 @@
+/* Colours used by the development views (Flow and Traces). */
+:root {
+  --card: #ffffff;
+  --ink: #1d2433;
+  --muted: #667085;
+  --line: #e4e7ec;
+  --accent: #2f5fd0;
+  --ok: #067647;
+  --ok-bg: #e7f6ee;
+  --warn: #93370d;
+  --warn-bg: #fdf0e1;
+  --bad: #b42318;
+  --bad-bg: #fdecea;
+  --grey-bg: #eef0f3;
+}

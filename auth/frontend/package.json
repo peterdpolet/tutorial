@@ -8,6 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.8",
     "axios": "^1.7.0",
     "vue": "^3.5.0"
   },

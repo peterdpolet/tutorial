@@ -56,6 +56,17 @@ Each episode runs the same four-step loop on one flow:
   trace as a tree. The verification email appears in the Django terminal.
 - Code map, then the flow in VS Code (see the next section).
 
+## The process flow in the browser
+
+With both servers running (`npm run dev` and `runserver 8200`), open
+http://localhost:5273 and use the **Flow** and **Traces** tabs. They exist only
+in development: a production build leaves them out.
+
+Load the code map first (the two commands in the next section). Then register
+with "Trace this request" ticked, open **Flow**, and pick that trace under
+"Overlay trace": the boxes that ran light up. **Traces** shows the same request
+as a call tree with the values at each decision.
+
 ## The process flow in VS Code
 
 The map is built from the source, loaded into the tracker's database, then read

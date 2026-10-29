@@ -25,7 +25,8 @@ first, then build the thing that prevents it.
 
 ## Understand (about 5 minutes)
 
-0. Open the flow in VS Code first (see the top-level README), before any trace.
+0. Open the flow first, before any trace, in the browser (Flow tab) or in VS Code
+   (see the top-level README).
    This is the map: click, form handler, API call, URL, view, the six steps.
    Say what should happen. Then register with tracing on and reopen the flow:
    the boxes that ran light up. For an unhappy path, the boxes after the
