@@ -11,6 +11,7 @@
  */
 import { ref, defineAsyncComponent } from 'vue'
 import RegisterView from '@/views/RegisterView.vue'
+import VerifyView from '@/views/VerifyView.vue'
 
 const dev = import.meta.env.DEV
 
@@ -19,11 +20,16 @@ const dev = import.meta.env.DEV
 const FlowView = dev ? defineAsyncComponent(() => import('@/dev/FlowView.vue')) : null
 const TraceViewer = dev ? defineAsyncComponent(() => import('@/dev/TraceViewer.vue')) : null
 if (dev) import('@/dev/devtools.css')
+// The link in the confirmation email opens /verify?token=...; there is no router yet.
+const onVerifyPage = window.location.pathname === '/verify'
 const tab = ref('register')   // 'register' | 'flow' | 'traces'
 </script>
 
 <template>
-  <main :class="{ wide: tab !== 'register' }">
+  <main :class="{ wide: !onVerifyPage && tab !== 'register' }">
+    <VerifyView v-if="onVerifyPage" />
+
+    <template v-else>
     <nav v-if="dev" class="tabs">
       <button :class="{ on: tab === 'register' }" @click="tab = 'register'">Register</button>
       <button :class="{ on: tab === 'flow' }" @click="tab = 'flow'">Flow</button>
@@ -33,6 +39,7 @@ const tab = ref('register')   // 'register' | 'flow' | 'traces'
     <RegisterView v-if="tab === 'register'" />
     <FlowView v-if="dev && tab === 'flow'" />
     <TraceViewer v-if="dev && tab === 'traces'" />
+    </template>
   </main>
 </template>
 

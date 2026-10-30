@@ -58,6 +58,9 @@ DEFAULT_FROM_EMAIL = "noreply@example.com"
 # Where the link in the verification email points: the Vue dev server.
 FRONTEND_URL = "http://localhost:5273"
 
+# How long the emailed confirmation link works, in hours.
+EMAIL_TOKEN_LIFETIME_HOURS = 24
+
 # --- Tracker -------------------------------------------------------------
 # Off unless True. A request is traced only if it also sends  X-Tracker: 1
 # and the policy below says yes.

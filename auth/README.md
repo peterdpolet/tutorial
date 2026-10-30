@@ -11,8 +11,8 @@ Each episode runs the same four-step loop on one flow:
 | # | Episode | Status |
 |---|---|---|
 | 1 | Register | built (`episodes/01-register/`) |
-| 2 | Verify email | next |
-| 3 | Login | |
+| 2 | Verify email | built (`episodes/02-verify-email/`) |
+| 3 | Login | next |
 | 4 | Token refresh | |
 | 5 | Logout | |
 | 6 | Password reset | |
