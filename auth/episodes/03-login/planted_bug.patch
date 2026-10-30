@@ -1,0 +1,10 @@
+--- a/backend/accounts/login.py
++++ b/backend/accounts/login.py
+@@ -145,7 +145,6 @@
+     check_not_locked(email=email)
+     user = check_credentials(email=email, password=password)
+     check_active(user=user)
+-    reset_failures(email=email)
+     return issue_tokens(user=user)
+ 
+ 

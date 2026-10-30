@@ -50,6 +50,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Password hashing is deliberately slow, which makes the login tests crawl.
+# While running the tests only, use a fast (insecure) hasher.
+import sys
+if "test" in sys.argv:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
 # Emails are printed to the terminal, never sent. (The test runner swaps in an
 # in-memory backend automatically.)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -60,6 +66,12 @@ FRONTEND_URL = "http://localhost:5273"
 
 # How long the emailed confirmation link works, in hours.
 EMAIL_TOKEN_LIFETIME_HOURS = 24
+
+# Login (episode 3). Invented numbers; a real site chooses its own.
+LOGIN_MAX_FAILURES = 5        # wrong passwords in a row before the address locks
+LOGIN_LOCK_MINUTES = 15       # how long the lock lasts
+ACCESS_TOKEN_SECONDS = 900    # the short-lived token: 15 minutes
+REFRESH_TOKEN_DAYS = 14       # the long-lived token (episode 4 spends it)
 
 # --- Tracker -------------------------------------------------------------
 # Off unless True. A request is traced only if it also sends  X-Tracker: 1
@@ -72,6 +84,8 @@ TRACKER_ENABLED = DEBUG
 TRACKER_AUTHORISE = "tracker.policy.dev_authorise"
 TRACKER_DEV_ANON_PREFIXES = ["/api/auth/"]
 # The trace viewer (Flow view, VS Code extension) normally answers logged-in
-# staff only, and there is no login yet. This lets it be READ from this machine
-# while DEBUG is on. Delete it once the project has logins (episode 3).
+# staff only. Logging in (episode 3) gives people an access token, but the
+# tracker only recognises Django staff logins, not that token. So this stays,
+# reading from this machine while DEBUG is on, until the tracker learns to read
+# the token. Never enable it on a real server.
 TRACKER_DEV_ALLOW_VIEWER = True

@@ -3,6 +3,8 @@
  *
  *   POST /api/auth/register/   create an inactive account and email a link
  *   POST /api/auth/verify/     switch the account on, using the token in that link
+ *   POST /api/auth/login/      check the password, return an access and a refresh token
+ *   GET  /api/auth/me/         who does this access token belong to?
  *
  * Register returns 201 + {detail}, or 400 + {errors: {field: [reasons]}}.
  * Verify returns 200 + {detail}, or 400 + {errors: {token: [reasons]}}.
@@ -33,6 +35,39 @@ export const verifyEmail = async ({ token }, { trace = false } = {}) => {
       headers: trace ? { 'X-Tracker': '1' } : {},
     })
     return { detail: res.data.detail, runId: res.headers['x-tracker-run'] ?? null }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// Episode 3. POST /api/auth/login/ returns 200 + {access_token, refresh_token, expires_in},
+// or 400/401/403/429 + {detail} (or {errors}) for a refusal.
+// Resolves to { accessToken, refreshToken, expiresIn, runId }. Rejects with an Error
+// (.status, .fieldErrors, .runId); .status 429 means the address is locked.
+export const loginAccount = async ({ email, password }, { trace = false } = {}) => {
+  try {
+    const res = await api.post('/auth/login/', { email, password }, {
+      headers: trace ? { 'X-Tracker': '1' } : {},
+    })
+    return {
+      accessToken: res.data.access_token,
+      refreshToken: res.data.refresh_token,
+      expiresIn: res.data.expires_in,
+      runId: res.headers['x-tracker-run'] ?? null,
+    }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// GET /api/auth/me/ with the access token in the Authorization header.
+// Resolves to { email, runId }. Rejects with an Error (.status 401 = not logged in / expired).
+export const fetchMe = async ({ accessToken }, { trace = false } = {}) => {
+  try {
+    const res = await api.get('/auth/me/', {
+      headers: { Authorization: `Bearer ${accessToken}`, ...(trace ? { 'X-Tracker': '1' } : {}) },
+    })
+    return { email: res.data.email, runId: res.headers['x-tracker-run'] ?? null }
   } catch (err) {
     throw toError(err)
   }

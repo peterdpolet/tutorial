@@ -3,6 +3,7 @@
  * App.vue: the tutorial's one screen, with development tools.
  *
  *   Register   the real screen (RegisterView.vue)
+ *   Login      the real screen (LoginView.vue)
  *   Flow       the process map with a saved trace laid over it   (development only)
  *   Traces     saved traces as a call tree                       (development only)
  *
@@ -11,6 +12,7 @@
  */
 import { ref, defineAsyncComponent } from 'vue'
 import RegisterView from '@/views/RegisterView.vue'
+import LoginView from '@/views/LoginView.vue'
 import VerifyView from '@/views/VerifyView.vue'
 
 const dev = import.meta.env.DEV
@@ -22,21 +24,25 @@ const TraceViewer = dev ? defineAsyncComponent(() => import('@/dev/TraceViewer.v
 if (dev) import('@/dev/devtools.css')
 // The link in the confirmation email opens /verify?token=...; there is no router yet.
 const onVerifyPage = window.location.pathname === '/verify'
-const tab = ref('register')   // 'register' | 'flow' | 'traces'
+const tab = ref('register')   // 'register' | 'login' | 'flow' | 'traces'
 </script>
 
 <template>
-  <main :class="{ wide: !onVerifyPage && tab !== 'register' }">
+  <main :class="{ wide: !onVerifyPage && (tab === 'flow' || tab === 'traces') }">
     <VerifyView v-if="onVerifyPage" />
 
     <template v-else>
-    <nav v-if="dev" class="tabs">
+    <nav class="tabs">
       <button :class="{ on: tab === 'register' }" @click="tab = 'register'">Register</button>
-      <button :class="{ on: tab === 'flow' }" @click="tab = 'flow'">Flow</button>
-      <button :class="{ on: tab === 'traces' }" @click="tab = 'traces'">Traces</button>
+      <button :class="{ on: tab === 'login' }" @click="tab = 'login'">Log in</button>
+      <template v-if="dev">
+        <button :class="{ on: tab === 'flow' }" @click="tab = 'flow'">Flow</button>
+        <button :class="{ on: tab === 'traces' }" @click="tab = 'traces'">Traces</button>
+      </template>
     </nav>
 
     <RegisterView v-if="tab === 'register'" />
+    <LoginView v-if="tab === 'login'" />
     <FlowView v-if="dev && tab === 'flow'" />
     <TraceViewer v-if="dev && tab === 'traces'" />
     </template>
