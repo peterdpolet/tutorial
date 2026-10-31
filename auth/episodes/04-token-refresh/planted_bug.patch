@@ -1,0 +1,11 @@
+--- a/backend/accounts/refresh.py
++++ b/backend/accounts/refresh.py
+@@ -50,7 +50,7 @@
+ 
+ @traced("revoke_family")
+ def revoke_family(*, row):
+-    revoked = RefreshToken.objects.filter(family=row.family, revoked_at__isnull=True).update(
++    revoked = RefreshToken.objects.filter(pk=row.pk, revoked_at__isnull=True).update(
+         revoked_at=timezone.now()
+     )
+     checkpoint("family_revoked", revoked_rows=revoked)

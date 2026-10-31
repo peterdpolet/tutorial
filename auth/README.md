@@ -13,8 +13,8 @@ Each episode runs the same four-step loop on one flow:
 | 1 | Register | built (`episodes/01-register/`) |
 | 2 | Verify email | built (`episodes/02-verify-email/`) |
 | 3 | Login | built (`episodes/03-login/`) |
-| 4 | Token refresh | next |
-| 5 | Logout | |
+| 4 | Token refresh | built (`episodes/04-token-refresh/`) |
+| 5 | Logout | next |
 | 6 | Password reset | |
 | 7 | Two-factor (TOTP) | |
 | 8 | Permissions | |
@@ -97,3 +97,25 @@ reopen it: the boxes that ran light up, and "Open in editor" jumps to the line.
   `Tut0rial-Pass!`. Never screen-share a trace from a real person's account.
 - Passwords, tokens and emails are redacted before anything is stored; every
   episode has a test that proves it.
+
+## Known limits (read this before trusting any of it)
+
+The aim of this series is a login you can fully understand, and a process for
+building everything after it. It is not a finished, hardened product. In
+particular it does not cover, or does only for development:
+
+- **HTTPS.** Everything here runs over plain HTTP on your own machine. A real
+  site must serve every request over HTTPS, or tokens and passwords can be read
+  in transit.
+- **Where the browser keeps tokens.** The tokens live in a page variable, so a
+  reload logs you out. Keeping them in localStorage or a cookie each brings its
+  own risks (script injection, cross-site requests). Pick deliberately.
+- **Attacks from other sites or injected scripts** (cross-site request forgery
+  and cross-site scripting) are not discussed in depth.
+- **Limits by network address.** Lockout counts failures per email address
+  typed. It does not limit how fast one machine can try many addresses.
+- **Development-only settings**: a throw-away secret key, DEBUG on, SQLite,
+  emails printed to the terminal, and a trace viewer that is open to this
+  machine. The deployment episodes replace these step by step.
+
+Each episode's notes call out the limits that matter to its own flow.

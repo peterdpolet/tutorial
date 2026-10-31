@@ -27,8 +27,6 @@ Two deliberate choices, both visible in the trace:
 The numbers (5 failures, 15 minutes, 15-minute access token, 14-day refresh
 token) are invented for the tutorial; they live in settings.py.
 """
-import hashlib
-import secrets
 from datetime import timedelta
 
 from django.conf import settings
@@ -40,11 +38,11 @@ from django.utils import timezone
 
 from tracker.tracker import checkpoint, traced
 
-from .models import LoginLock, RefreshToken
+from .models import LoginLock
+from .tokens import ACCESS_SALT, make_access_token, new_family, store_refresh_token
 
 User = get_user_model()
 
-ACCESS_SALT = "auth-tutorial.access"
 BAD_LOGIN = "Email or password is incorrect."
 
 # A real hash of a throw-away string. When the email is unknown we still check
@@ -120,13 +118,8 @@ def reset_failures(*, email):
 
 @traced("issue_tokens")
 def issue_tokens(*, user):
-    access_token = signing.dumps({"uid": user.pk}, salt=ACCESS_SALT)
-    refresh_token = secrets.token_urlsafe(32)
-    RefreshToken.objects.create(
-        user=user,
-        token_hash=hashlib.sha256(refresh_token.encode()).hexdigest(),
-        expires_at=timezone.now() + timedelta(days=settings.REFRESH_TOKEN_DAYS),
-    )
+    access_token = make_access_token(user)
+    refresh_token = store_refresh_token(user, new_family())   # a new login starts a new family
     checkpoint(
         "tokens_issued",
         access_valid_seconds=settings.ACCESS_TOKEN_SECONDS,

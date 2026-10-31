@@ -5,6 +5,7 @@
  *   POST /api/auth/verify/     switch the account on, using the token in that link
  *   POST /api/auth/login/      check the password, return an access and a refresh token
  *   GET  /api/auth/me/         who does this access token belong to?
+ *   POST /api/auth/refresh/    swap a refresh token for a new pair (the old one is retired)
  *
  * Register returns 201 + {detail}, or 400 + {errors: {field: [reasons]}}.
  * Verify returns 200 + {detail}, or 400 + {errors: {token: [reasons]}}.
@@ -68,6 +69,25 @@ export const fetchMe = async ({ accessToken }, { trace = false } = {}) => {
       headers: { Authorization: `Bearer ${accessToken}`, ...(trace ? { 'X-Tracker': '1' } : {}) },
     })
     return { email: res.data.email, runId: res.headers['x-tracker-run'] ?? null }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// Episode 4. POST /api/auth/refresh/ swaps a refresh token for a NEW pair; the one
+// sent is retired. Resolves to { accessToken, refreshToken, expiresIn, runId }.
+// Rejects with an Error (.status 401: unknown, expired, or already used; .runId).
+export const refreshTokens = async ({ refreshToken }, { trace = false } = {}) => {
+  try {
+    const res = await api.post('/auth/refresh/', { refresh_token: refreshToken }, {
+      headers: trace ? { 'X-Tracker': '1' } : {},
+    })
+    return {
+      accessToken: res.data.access_token,
+      refreshToken: res.data.refresh_token,
+      expiresIn: res.data.expires_in,
+      runId: res.headers['x-tracker-run'] ?? null,
+    }
   } catch (err) {
     throw toError(err)
   }

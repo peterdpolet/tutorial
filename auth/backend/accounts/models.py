@@ -33,9 +33,13 @@ class LoginLock(models.Model):
 class RefreshToken(models.Model):
     """
     The long-lived half of a login. We keep only a hash of it: if the database
-    leaked, the rows would not be usable as logins. Episode 4 spends these.
+    leaked, the rows would not be usable as logins. Episode 4 spends these:
+    each use retires the row (revoked_at) and issues the next one.
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # One login = one family. Each refresh retires a token and issues the next
+    # one in the same family, so a whole login can be ended in one step.
+    family = models.CharField(max_length=32, db_index=True)
     token_hash = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
