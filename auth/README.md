@@ -14,8 +14,8 @@ Each episode runs the same four-step loop on one flow:
 | 2 | Verify email | built (`episodes/02-verify-email/`) |
 | 3 | Login | built (`episodes/03-login/`) |
 | 4 | Token refresh | built (`episodes/04-token-refresh/`) |
-| 5 | Logout | next |
-| 6 | Password reset | |
+| 5 | Logout | built (`episodes/05-logout/`) |
+| 6 | Password reset | next |
 | 7 | Two-factor (TOTP) | |
 | 8 | Permissions | |
 
@@ -97,6 +97,21 @@ reopen it: the boxes that ran light up, and "Open in editor" jumps to the line.
   `Tut0rial-Pass!`. Never screen-share a trace from a real person's account.
 - Passwords, tokens and emails are redacted before anything is stored; every
   episode has a test that proves it.
+
+## Where the tests live
+
+One file per episode, in `backend/accounts/`. (Django's default name `tests.py`
+holds episode 1.) Run one file with `python manage.py test accounts.test_login`,
+or everything with `python manage.py test accounts`; add `-v 2` to print every
+test's name.
+
+| File | Episode | Tests |
+|---|---|---|
+| `tests.py` | 1 Register | 19 |
+| `test_verify.py` | 2 Verify email | 16 |
+| `test_login.py` | 3 Login | 24 |
+| `test_refresh.py` | 4 Token refresh | 20 |
+| `test_logout.py` | 5 Logout | 21 |
 
 ## Known limits (read this before trusting any of it)
 

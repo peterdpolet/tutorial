@@ -6,6 +6,7 @@
  *   POST /api/auth/login/      check the password, return an access and a refresh token
  *   GET  /api/auth/me/         who does this access token belong to?
  *   POST /api/auth/refresh/    swap a refresh token for a new pair (the old one is retired)
+ *   POST /api/auth/logout/     end this login (or every login) on the server
  *
  * Register returns 201 + {detail}, or 400 + {errors: {field: [reasons]}}.
  * Verify returns 200 + {detail}, or 400 + {errors: {token: [reasons]}}.
@@ -88,6 +89,21 @@ export const refreshTokens = async ({ refreshToken }, { trace = false } = {}) =>
       expiresIn: res.data.expires_in,
       runId: res.headers['x-tracker-run'] ?? null,
     }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// Episode 5. POST /api/auth/logout/ ends the login the refresh token belongs to
+// (or, with everywhere: true, every login of that person). It answers 200 even for
+// a token it does not know, so pressing it twice is harmless.
+// Resolves to { detail, runId }.
+export const logoutAccount = async ({ refreshToken, everywhere = false }, { trace = false } = {}) => {
+  try {
+    const res = await api.post('/auth/logout/', { refresh_token: refreshToken, everywhere }, {
+      headers: trace ? { 'X-Tracker': '1' } : {},
+    })
+    return { detail: res.data.detail, runId: res.headers['x-tracker-run'] ?? null }
   } catch (err) {
     throw toError(err)
   }

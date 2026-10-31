@@ -16,7 +16,7 @@
  * whole login. So every caller shares the single refresh in flight.
  */
 import { reactive } from 'vue'
-import { loginAccount, fetchMe, refreshTokens } from '@/api/auth'
+import { loginAccount, fetchMe, refreshTokens, logoutAccount } from '@/api/auth'
 
 let accessToken = null
 let refreshToken = null
@@ -24,13 +24,16 @@ let previousRefreshToken = null   // kept only so the demo can "replay" it
 let refreshing = null             // the refresh in flight, shared by every caller
 
 // What the screen needs to know (reactive so buttons enable and disable).
-export const session = reactive({ signedIn: false, canReplay: false })
+// `loggedOut` means the SERVER has ended this login but the page still holds the
+// tokens, so the demo buttons can show what still works afterwards.
+export const session = reactive({ signedIn: false, canReplay: false, loggedOut: false })
 
 function setTokens(next, { rotated }) {
   if (rotated) previousRefreshToken = refreshToken
   accessToken = next.accessToken
   refreshToken = next.refreshToken
   session.signedIn = true
+  session.loggedOut = false
   session.canReplay = previousRefreshToken !== null
 }
 
@@ -38,6 +41,7 @@ function endSession() {
   accessToken = refreshToken = previousRefreshToken = null
   session.signedIn = false
   session.canReplay = false
+  session.loggedOut = false
 }
 
 // Log in. Resolves to { runId }.
@@ -103,6 +107,15 @@ export async function replayOldToken({ trace = false } = {}) {
   } catch (err) {
     throw Object.assign(err, { runs: err.runId ? [{ label: 'replay', id: err.runId }] : [] })
   }
+}
+
+// Episode 5. Tell the server to end this login (or every login). The page keeps its
+// tokens on purpose, so the demo buttons can show that the old access token still
+// answers while the refresh token is dead. Resolves to { runId }.
+export async function logOutOnServer({ everywhere = false, trace = false } = {}) {
+  const result = await logoutAccount({ refreshToken, everywhere }, { trace })
+  session.loggedOut = true
+  return { runId: result.runId }
 }
 
 export function forgetSession() {

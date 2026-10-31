@@ -1,0 +1,11 @@
+--- a/backend/accounts/logout.py
++++ b/backend/accounts/logout.py
+@@ -46,7 +46,7 @@
+ 
+ @traced("end_login")
+ def end_login(*, row):
+-    revoked = RefreshToken.objects.filter(family=row.family, revoked_at__isnull=True).update(
++    revoked = RefreshToken.objects.filter(user=row.user, revoked_at__isnull=True).update(
+         revoked_at=timezone.now()
+     )
+     checkpoint("login_ended", revoked_rows=revoked)

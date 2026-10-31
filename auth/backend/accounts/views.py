@@ -8,6 +8,7 @@ The HTTP edge of Register: read the JSON, call the service, shape the reply.
 Episode 2 adds verify_view: the same shape for the emailed link.
 Episode 3 adds login_view (tokens, or a refusal with its own status) and me_view.
 Episode 4 adds refresh_view: a refresh token in, a new pair out (or a 401).
+Episode 5 adds logout_view: a refresh token in, that login ended, always a 200.
 """
 import json
 
@@ -17,6 +18,7 @@ from django.views.decorators.http import require_GET, require_POST
 from tracker.tracker import traced
 
 from .login import LoginError, authenticate_access, login
+from .logout import logout
 from .refresh import refresh
 from .services import RegistrationError, register
 from .verify import VerificationError, verify_email
@@ -128,3 +130,21 @@ def refresh_view(request):
         return JsonResponse({"detail": exc.detail}, status=exc.status)
 
     return JsonResponse(tokens)
+
+
+@require_POST
+@traced("logout_view")
+def logout_view(request):
+    try:
+        body = json.loads(request.body or b"{}")
+        if not isinstance(body, dict):
+            raise ValueError
+    except ValueError:
+        return JsonResponse({"detail": "Send a JSON object."}, status=400)
+
+    refresh_token = body.get("refresh_token")
+    if not isinstance(refresh_token, str) or not refresh_token.strip():
+        return JsonResponse({"errors": {"refresh_token": ["This field is required."]}}, status=400)
+
+    logout(refresh_token=refresh_token.strip(), everywhere=body.get("everywhere") is True)
+    return JsonResponse({"detail": "Logged out."})

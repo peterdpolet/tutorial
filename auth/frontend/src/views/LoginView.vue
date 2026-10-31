@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { startSession, whoAmI, refreshNow, breakAccessToken, replayOldToken, forgetSession, session } from '@/api/session'
+import { startSession, whoAmI, refreshNow, breakAccessToken, replayOldToken, logOutOnServer, forgetSession, session } from '@/api/session'
 
 const email = ref('')
 const password = ref('')
@@ -87,6 +87,20 @@ const onReplay = () => run(async () => {
   }
 })
 
+const onLogout = (everywhere) => run(async () => {
+  try {
+    const r = await logOutOnServer({ everywhere, trace: trace.value })
+    say(
+      everywhere
+        ? 'Logged out everywhere: every login of this account has been ended on the server.'
+        : 'Logged out: this login has been ended on the server.',
+      { runs: [{ label: 'logout', id: r.runId }] },
+    )
+  } catch (err) {
+    say(err.message, { bad: true, runs: err.runId ? [{ label: 'logout', id: err.runId }] : [] })
+  }
+})
+
 const onLeave = () => { forgetSession(); log.value = [] }
 </script>
 
@@ -130,9 +144,16 @@ const onLeave = () => { forgetSession(); log.value = [] }
       <button :disabled="busy" @click="onWho">Who am I?</button>
       <button :disabled="busy" @click="onBreak">Break my access token</button>
       <button :disabled="busy" @click="onRefresh">Refresh now</button>
+      <button :disabled="busy" @click="onLogout(false)">Log out</button>
+      <button :disabled="busy" @click="onLogout(true)">Log out everywhere</button>
       <button :disabled="busy || !session.canReplay" @click="onReplay">Replay the previous refresh token</button>
       <button :disabled="busy" class="quiet" @click="onLeave">Forget the session (this page only)</button>
     </div>
+    <p v-if="session.loggedOut" class="notice">
+      You are logged out on the server. This page still holds the old tokens, so try
+      <b>Who am I?</b> (the access token still answers until its 15 minutes are up) and
+      <b>Refresh now</b> (the refresh token is dead).
+    </p>
     <p class="hint">
       "Replay" plays a thief holding a stolen copy of the previous refresh token. It needs one
       "Refresh now" first, so that there is a previous token to replay.
@@ -158,6 +179,7 @@ input[type='text'], input[type='password'] { padding: .5rem; font-size: 1rem; }
 button { padding: .6rem; font-size: 1rem; cursor: pointer; }
 .buttons { display: grid; gap: .5rem; }
 .quiet { background: none; border: 1px solid #d0d5dd; color: #52606d; }
+.notice { margin: 0; padding: .6rem .8rem; background: #fff7e6; border: 1px solid #f0d9a8; border-radius: 6px; font-size: .9rem; }
 .bad { color: #b42318; }
 p.bad { margin: 0; }
 .hint { font-size: .85rem; color: #52606d; margin: 0; }
