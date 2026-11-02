@@ -15,7 +15,7 @@ Each episode runs the same four-step loop on one flow:
 | 3 | Login | built (`episodes/03-login/`) |
 | 4 | Token refresh | built (`episodes/04-token-refresh/`) |
 | 5 | Logout | built (`episodes/05-logout/`) |
-| 6 | Password reset | next |
+| 6 | Password reset | built (`episodes/06-password-reset/`) |
 | 7 | Two-factor (TOTP) | |
 | 8 | Permissions | |
 
@@ -112,6 +112,7 @@ test's name.
 | `test_login.py` | 3 Login | 24 |
 | `test_refresh.py` | 4 Token refresh | 20 |
 | `test_logout.py` | 5 Logout | 21 |
+| `test_reset.py` | 6 Password reset | 36 |
 
 ## Known limits (read this before trusting any of it)
 

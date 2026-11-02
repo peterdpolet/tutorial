@@ -1,0 +1,10 @@
+--- a/backend/accounts/reset.py
++++ b/backend/accounts/reset.py
+@@ -180,7 +180,6 @@
+         row.user.set_password(password)
+         row.user.save(update_fields=["password"])
+         checkpoint("password_changed", user_id=row.user.pk)
+-        end_all_logins(user=row.user)
+         reset_failures(email=row.user.username)
+ 
+ 

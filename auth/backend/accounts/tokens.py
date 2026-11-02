@@ -26,6 +26,11 @@ def hash_refresh_token(refresh_token):
     return hashlib.sha256(refresh_token.encode()).hexdigest()
 
 
+# Episode 6 stores password-reset links the same way, so it uses the same recipe
+# under a name that does not say "refresh".
+hash_secret = hash_refresh_token
+
+
 def make_access_token(user):
     return signing.dumps({"uid": user.pk}, salt=ACCESS_SALT)
 

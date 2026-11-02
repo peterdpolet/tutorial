@@ -44,3 +44,15 @@ class RefreshToken(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     revoked_at = models.DateTimeField(null=True, blank=True)
+
+
+class ResetToken(models.Model):
+    """
+    The single-use secret in the password-reset link. Like a refresh token, only
+    its hash is stored: whoever holds the link can set a new password, so a copy
+    of the database must not contain usable links.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token_hash = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)

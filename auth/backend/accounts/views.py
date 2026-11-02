@@ -9,6 +9,8 @@ Episode 2 adds verify_view: the same shape for the emailed link.
 Episode 3 adds login_view (tokens, or a refusal with its own status) and me_view.
 Episode 4 adds refresh_view: a refresh token in, a new pair out (or a 401).
 Episode 5 adds logout_view: a refresh token in, that login ended, always a 200.
+Episode 6 adds forgot_view (an email in, always the same 200) and reset_view
+(a link token and a new password in, 200 or a 400 the person can fix).
 """
 import json
 
@@ -20,6 +22,7 @@ from tracker.tracker import traced
 from .login import LoginError, authenticate_access, login
 from .logout import logout
 from .refresh import refresh
+from .reset import ResetError, request_reset, reset_password
 from .services import RegistrationError, register
 from .verify import VerificationError, verify_email
 
@@ -148,3 +151,49 @@ def logout_view(request):
 
     logout(refresh_token=refresh_token.strip(), everywhere=body.get("everywhere") is True)
     return JsonResponse({"detail": "Logged out."})
+
+
+FORGOT_REPLY = "If that address has an account, we have emailed a link to reset its password."
+
+
+@require_POST
+@traced("forgot_view")
+def forgot_view(request):
+    try:
+        body = json.loads(request.body or b"{}")
+        if not isinstance(body, dict):
+            raise ValueError
+    except ValueError:
+        return JsonResponse({"detail": "Send a JSON object."}, status=400)
+
+    email = body.get("email")
+    if not isinstance(email, str) or not email.strip():
+        return JsonResponse({"errors": {"email": ["This field is required."]}}, status=400)
+
+    request_reset(email=email)
+    return JsonResponse({"detail": FORGOT_REPLY})      # the same words whether or not there was an account
+
+
+@require_POST
+@traced("reset_view")
+def reset_view(request):
+    try:
+        body = json.loads(request.body or b"{}")
+        if not isinstance(body, dict):
+            raise ValueError
+    except ValueError:
+        return JsonResponse({"detail": "Send a JSON object."}, status=400)
+
+    errors = {}
+    for field in ("token", "password"):
+        if not isinstance(body.get(field), str) or not body[field].strip():
+            errors[field] = ["This field is required."]
+    if errors:
+        return JsonResponse({"errors": errors}, status=400)
+
+    try:
+        reset_password(token=body["token"].strip(), password=body["password"])
+    except ResetError as exc:
+        return JsonResponse({"errors": {exc.field: exc.messages}}, status=400)
+
+    return JsonResponse({"detail": "Password changed. Log in with your new password."})

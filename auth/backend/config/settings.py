@@ -73,6 +73,10 @@ LOGIN_LOCK_MINUTES = 15       # how long the lock lasts
 ACCESS_TOKEN_SECONDS = 900    # the short-lived token: 15 minutes
 REFRESH_TOKEN_DAYS = 14       # the long-lived token (episode 4 spends it)
 
+# Password reset (episode 6).
+PASSWORD_RESET_LIFETIME_MINUTES = 60   # how long the emailed reset link works
+PASSWORD_RESET_COOLDOWN_SECONDS = 60   # no second reset email to one account inside this
+
 # --- Tracker -------------------------------------------------------------
 # Off unless True. A request is traced only if it also sends  X-Tracker: 1
 # and the policy below says yes.

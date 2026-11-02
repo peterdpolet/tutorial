@@ -7,6 +7,8 @@
  *   GET  /api/auth/me/         who does this access token belong to?
  *   POST /api/auth/refresh/    swap a refresh token for a new pair (the old one is retired)
  *   POST /api/auth/logout/     end this login (or every login) on the server
+ *   POST /api/auth/forgot/     ask for a password-reset link (always the same answer)
+ *   POST /api/auth/reset/      set a new password, using the token in that link
  *
  * Register returns 201 + {detail}, or 400 + {errors: {field: [reasons]}}.
  * Verify returns 200 + {detail}, or 400 + {errors: {token: [reasons]}}.
@@ -101,6 +103,34 @@ export const refreshTokens = async ({ refreshToken }, { trace = false } = {}) =>
 export const logoutAccount = async ({ refreshToken, everywhere = false }, { trace = false } = {}) => {
   try {
     const res = await api.post('/auth/logout/', { refresh_token: refreshToken, everywhere }, {
+      headers: trace ? { 'X-Tracker': '1' } : {},
+    })
+    return { detail: res.data.detail, runId: res.headers['x-tracker-run'] ?? null }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// Episode 6. POST /api/auth/forgot/ always answers 200 with the same sentence, whether
+// or not the address has an account, so the form cannot be used to find out.
+// Resolves to { detail, runId }.
+export const forgotPassword = async ({ email }, { trace = false } = {}) => {
+  try {
+    const res = await api.post('/auth/forgot/', { email }, {
+      headers: trace ? { 'X-Tracker': '1' } : {},
+    })
+    return { detail: res.data.detail, runId: res.headers['x-tracker-run'] ?? null }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// Episode 6. POST /api/auth/reset/ sets the new password and ends every login.
+// Resolves to { detail, runId }. Rejects with an Error (.fieldErrors.token or
+// .fieldErrors.password; a weak password does NOT use up the link; .runId).
+export const resetPassword = async ({ token, password }, { trace = false } = {}) => {
+  try {
+    const res = await api.post('/auth/reset/', { token, password }, {
       headers: trace ? { 'X-Tracker': '1' } : {},
     })
     return { detail: res.data.detail, runId: res.headers['x-tracker-run'] ?? null }
