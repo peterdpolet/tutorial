@@ -38,6 +38,7 @@ SENSITIVE_NAME_FRAGMENTS = [
     "bank_account", "iban", "sort_code",
     "certificate_number", "certification_number",  # e.g. gemstone lab certificate numbers
     "auth", "session_key", "csrf",
+    "otp", "recovery",    # episode 7: one-time codes and recovery codes
 ]
 
 

@@ -77,6 +77,11 @@ REFRESH_TOKEN_DAYS = 14       # the long-lived token (episode 4 spends it)
 PASSWORD_RESET_LIFETIME_MINUTES = 60   # how long the emailed reset link works
 PASSWORD_RESET_COOLDOWN_SECONDS = 60   # no second reset email to one account inside this
 
+# Two-factor (episode 7).
+MFA_TOKEN_SECONDS = 300       # after the password is right, the person has 5 minutes to give the code
+TOTP_ISSUER = "Auth Tutorial" # the name an authenticator app shows beside the account
+RECOVERY_CODE_COUNT = 8       # one-use codes for a lost phone
+
 # --- Tracker -------------------------------------------------------------
 # Off unless True. A request is traced only if it also sends  X-Tracker: 1
 # and the policy below says yes.

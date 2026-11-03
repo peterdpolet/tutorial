@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { startSession, whoAmI, refreshNow, breakAccessToken, replayOldToken, logOutOnServer, forgetSession, session } from '@/api/session'
+import TwoFactorPanel from '@/views/TwoFactorPanel.vue'
+import { startSession, finishLogin, whoAmI, refreshNow, breakAccessToken, replayOldToken, logOutOnServer, forgetSession, session } from '@/api/session'
 
 const email = ref('')
 const password = ref('')
@@ -9,6 +10,8 @@ const busy = ref(false)
 const problem = ref('')
 const fieldErrors = ref({})
 const log = ref([])           // newest first: what the buttons did, with trace ids
+const mfaToken = ref(null)    // episode 7: the password was right; waiting for the code
+const otp = ref('')
 
 function say(text, { bad = false, runs = [] } = {}) {
   log.value.unshift({ text, bad, runs })
@@ -31,6 +34,11 @@ function onLogin() {
     try {
       const result = await startSession({ email: email.value, password: password.value }, { trace: trace.value })
       password.value = ''
+      if (result.mfaRequired) {
+        mfaToken.value = result.mfaToken
+        say('Password accepted. Now the code.', { runs: [{ label: 'login', id: result.runId }] })
+        return
+      }
       say('Logged in. Two tokens are held in memory (not shown).', { runs: [{ label: 'login', id: result.runId }] })
       await askWho()
     } catch (err) {
@@ -39,6 +47,34 @@ function onLogin() {
       if (err.runId) say(problem.value, { bad: true, runs: [{ label: 'login', id: err.runId }] })
     }
   })
+}
+
+// Episode 7: the second step. Sends the six-digit code (or a recovery code) with the note.
+function onCode() {
+  return run(async () => {
+    problem.value = ''
+    try {
+      const result = await finishLogin({ mfaToken: mfaToken.value, code: otp.value }, { trace: trace.value })
+      mfaToken.value = null
+      otp.value = ''
+      say('Logged in. Two tokens are held in memory (not shown).', { runs: [{ label: 'code step', id: result.runId }] })
+      await askWho()
+    } catch (err) {
+      problem.value = err.message
+      otp.value = ''
+      if (err.status === 429 || err.message.includes('Log in again') || err.message.includes('took too long')) {
+        mfaToken.value = null           // the note is no use any more: back to the password
+      }
+      if (err.runId) say(problem.value, { bad: true, runs: [{ label: 'code step', id: err.runId }] })
+    }
+  })
+}
+
+function onBackToPassword() {
+  mfaToken.value = null
+  otp.value = ''
+  problem.value = ''
+  log.value = []
 }
 
 async function askWho() {
@@ -105,7 +141,7 @@ const onLeave = () => { forgetSession(); log.value = [] }
 </script>
 
 <template>
-  <form v-if="!session.signedIn" @submit.prevent="onLogin">
+  <form v-if="!session.signedIn && !mfaToken" @submit.prevent="onLogin">
     <h1>Log in</h1>
 
     <label>
@@ -125,6 +161,33 @@ const onLeave = () => { forgetSession(); log.value = [] }
     </label>
 
     <button type="submit" :disabled="busy">{{ busy ? 'Working…' : 'Log in' }}</button>
+
+    <p v-if="problem" class="bad">{{ problem }}</p>
+    <p v-for="(item, i) in log.slice(0, 1)" :key="i" class="hint">
+      <template v-for="r in item.runs" :key="r.id">
+        {{ r.label }}: <code>python manage.py show_trace {{ r.id }}</code><br />
+      </template>
+    </p>
+  </form>
+
+  <form v-else-if="!session.signedIn" @submit.prevent="onCode">
+    <h1>Enter your code</h1>
+    <p class="hint">
+      Your password was right. Type the six digits your authenticator app shows, or one of your
+      recovery codes. You have 5 minutes.
+    </p>
+
+    <label>
+      Code
+      <input v-model="otp" type="text" inputmode="numeric" autocomplete="off" />
+    </label>
+
+    <label class="inline">
+      <input v-model="trace" type="checkbox" /> Trace these requests
+    </label>
+
+    <button type="submit" :disabled="busy">{{ busy ? 'Working…' : 'Log in' }}</button>
+    <button type="button" class="quiet" :disabled="busy" @click="onBackToPassword">Start again</button>
 
     <p v-if="problem" class="bad">{{ problem }}</p>
     <p v-for="(item, i) in log.slice(0, 1)" :key="i" class="hint">
@@ -154,6 +217,7 @@ const onLeave = () => { forgetSession(); log.value = [] }
       <b>Who am I?</b> (the access token still answers until its 15 minutes are up) and
       <b>Refresh now</b> (the refresh token is dead).
     </p>
+    <TwoFactorPanel />
     <p class="hint">
       "Replay" plays a thief holding a stolen copy of the previous refresh token. It needs one
       "Refresh now" first, so that there is a previous token to replay.

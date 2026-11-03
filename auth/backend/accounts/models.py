@@ -56,3 +56,29 @@ class ResetToken(models.Model):
     token_hash = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     used_at = models.DateTimeField(null=True, blank=True)
+
+
+class TotpDevice(models.Model):
+    """
+    The authenticator-app secret for one account (episode 7).
+
+    Unlike a password, the secret CANNOT be stored as a hash: the server has to
+    compute the same six digits the phone shows, so it needs the secret itself.
+    A real system encrypts it at rest (a known limit, see the README).
+    confirmed_at stays empty until the person proves the app works by typing a
+    code; until then the account does not ask for a second step.
+    """
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    secret = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    # The newest 30-second step already accepted. A code from this step, or any
+    # earlier one, is refused: a six-digit code works once.
+    last_used_step = models.BigIntegerField(default=0)
+
+
+class RecoveryCode(models.Model):
+    """One-use codes for a lost phone. Only the hash is stored, like a refresh token."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    code_hash = models.CharField(max_length=64, unique=True)
+    used_at = models.DateTimeField(null=True, blank=True)

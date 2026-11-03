@@ -11,6 +11,8 @@ Episode 4 adds refresh_view: a refresh token in, a new pair out (or a 401).
 Episode 5 adds logout_view: a refresh token in, that login ended, always a 200.
 Episode 6 adds forgot_view (an email in, always the same 200) and reset_view
 (a link token and a new password in, 200 or a 400 the person can fix).
+Episode 7 adds two_factor_setup_view and two_factor_confirm_view (logged in: turn
+two-factor on) and two_factor_login_view (an mfa_token and a code in, tokens out).
 """
 import json
 
@@ -23,6 +25,7 @@ from .login import LoginError, authenticate_access, login
 from .logout import logout
 from .refresh import refresh
 from .reset import ResetError, request_reset, reset_password
+from .twofactor import complete_login, confirm_two_factor, start_setup
 from .services import RegistrationError, register
 from .verify import VerificationError, verify_email
 
@@ -197,3 +200,66 @@ def reset_view(request):
         return JsonResponse({"errors": {exc.field: exc.messages}}, status=400)
 
     return JsonResponse({"detail": "Password changed. Log in with your new password."})
+
+
+def _json_body(request):
+    """The request body as a dict, or None when it is not a JSON object."""
+    try:
+        body = json.loads(request.body or b"{}")
+    except ValueError:
+        return None
+    return body if isinstance(body, dict) else None
+
+
+def _logged_in_user(request):
+    header = request.META.get("HTTP_AUTHORIZATION", "")
+    scheme, _, access_token = header.partition(" ")
+    if scheme != "Bearer" or not access_token.strip():
+        raise LoginError(401, "Not logged in.")
+    return authenticate_access(access_token=access_token.strip())
+
+
+@require_POST
+@traced("two_factor_setup_view")
+def two_factor_setup_view(request):
+    try:
+        user = _logged_in_user(request)
+        setup = start_setup(user=user)
+    except LoginError as exc:
+        return JsonResponse({"detail": exc.detail}, status=exc.status)
+    return JsonResponse(setup)
+
+
+@require_POST
+@traced("two_factor_confirm_view")
+def two_factor_confirm_view(request):
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({"detail": "Send a JSON object."}, status=400)
+    try:
+        user = _logged_in_user(request)
+        if not isinstance(body.get("code"), str) or not body["code"].strip():
+            return JsonResponse({"errors": {"code": ["This field is required."]}}, status=400)
+        result = confirm_two_factor(user=user, otp_code=body["code"])
+    except LoginError as exc:
+        return JsonResponse({"detail": exc.detail}, status=exc.status)
+    return JsonResponse(result)         # {"recovery_codes": [...]}
+
+
+@require_POST
+@traced("two_factor_login_view")
+def two_factor_login_view(request):
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({"detail": "Send a JSON object."}, status=400)
+    errors = {}
+    for field in ("mfa_token", "code"):
+        if not isinstance(body.get(field), str) or not body[field].strip():
+            errors[field] = ["This field is required."]
+    if errors:
+        return JsonResponse({"errors": errors}, status=400)
+    try:
+        tokens = complete_login(mfa_token=body["mfa_token"].strip(), otp_code=body["code"])
+    except LoginError as exc:
+        return JsonResponse({"detail": exc.detail}, status=exc.status)
+    return JsonResponse(tokens)

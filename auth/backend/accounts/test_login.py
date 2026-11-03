@@ -190,12 +190,12 @@ class TracingTests(TestCase):
         self.assertEqual(
             names,
             {"login_view", "login", "normalise_email", "check_not_locked", "check_credentials",
-             "check_active", "reset_failures", "issue_tokens"},
+             "check_active", "check_second_step", "reset_failures", "issue_tokens"},
         )
         labels = list(RuntimeEvent.objects.filter(event_type="checkpoint").order_by("seq").values_list("label", flat=True))
         self.assertEqual(
             labels,
-            ["lock_check", "credentials_check", "active_check", "failures_reset", "tokens_issued"],
+            ["lock_check", "credentials_check", "active_check", "second_step_check", "failures_reset", "tokens_issued"],
         )
 
     def test_a_refused_login_records_the_failure(self):

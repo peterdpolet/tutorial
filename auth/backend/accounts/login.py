@@ -11,8 +11,11 @@ who they say, and if so hands back two tokens.
            3. check_credentials       user exists AND password matches
                                       (on a miss: record_failure)
            4. check_active            correct password, but email never confirmed?
-           5. reset_failures          a good login wipes the failure count
-           6. issue_tokens            make the access token and refresh token
+           5. check_second_step       (episode 7) does this account need a code too?
+                start_second_step     yes: hand back an mfa_token instead of tokens
+                                      and keep the failure count (see twofactor.py)
+           6. reset_failures          a good login wipes the failure count
+           7. issue_tokens            make the access token and refresh token
 
     me_view (views.py)                proves the access token works
       -> authenticate_access          read the token, find the user
@@ -38,8 +41,8 @@ from django.utils import timezone
 
 from tracker.tracker import checkpoint, traced
 
-from .models import LoginLock
-from .tokens import ACCESS_SALT, make_access_token, new_family, store_refresh_token
+from .models import LoginLock, TotpDevice
+from .tokens import ACCESS_SALT, make_access_token, make_mfa_token, new_family, store_refresh_token
 
 User = get_user_model()
 
@@ -110,6 +113,20 @@ def check_active(*, user):
         raise LoginError(403, "Confirm your email address first: use the link we emailed you.")
 
 
+@traced("check_second_step")
+def check_second_step(*, user):
+    required = TotpDevice.objects.filter(user=user, confirmed_at__isnull=False).exists()
+    checkpoint("second_step_check", required=required)
+    return required
+
+
+@traced("start_second_step")
+def start_second_step(*, user):
+    mfa_token = make_mfa_token(user)
+    checkpoint("second_step_started", valid_seconds=settings.MFA_TOKEN_SECONDS)
+    return {"mfa_required": True, "mfa_token": mfa_token, "expires_in": settings.MFA_TOKEN_SECONDS}
+
+
 @traced("reset_failures")
 def reset_failures(*, email):
     LoginLock.objects.filter(email=email).update(failed_count=0, locked_until=None)
@@ -138,6 +155,10 @@ def login(*, email, password):
     check_not_locked(email=email)
     user = check_credentials(email=email, password=password)
     check_active(user=user)
+    if check_second_step(user=user):
+        # The password was right, but this is NOT yet a good login, so the failure
+        # count is left alone: it is wiped only when the code is right as well.
+        return start_second_step(user=user)
     reset_failures(email=email)
     return issue_tokens(user=user)
 

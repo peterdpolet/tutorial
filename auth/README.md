@@ -16,7 +16,7 @@ Each episode runs the same four-step loop on one flow:
 | 4 | Token refresh | built (`episodes/04-token-refresh/`) |
 | 5 | Logout | built (`episodes/05-logout/`) |
 | 6 | Password reset | built (`episodes/06-password-reset/`) |
-| 7 | Two-factor (TOTP) | |
+| 7 | Two-factor (TOTP) | built (`episodes/07-two-factor/`) |
 | 8 | Permissions | |
 
 ## Layout
@@ -113,6 +113,15 @@ test's name.
 | `test_refresh.py` | 4 Token refresh | 20 |
 | `test_logout.py` | 5 Logout | 21 |
 | `test_reset.py` | 6 Password reset | 36 |
+| `test_twofactor.py` | 7 Two-factor | 59 |
+
+## Planted-bug patches belong to their episode
+
+Each `planted_bug.patch` is written against the code as its own episode left it.
+Later episodes change the same files (episode 7 changes `login.py`, for
+instance), so an old patch may no longer apply to a later tree, and an old
+episode's notes describe that episode's tests and trace, not today's. To follow
+an episode, check out the commit it was built at; each episode is one commit.
 
 ## Known limits (read this before trusting any of it)
 

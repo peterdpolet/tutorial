@@ -16,7 +16,7 @@
  * whole login. So every caller shares the single refresh in flight.
  */
 import { reactive } from 'vue'
-import { loginAccount, fetchMe, refreshTokens, logoutAccount } from '@/api/auth'
+import { loginAccount, fetchMe, refreshTokens, logoutAccount, twoFactorSetup, twoFactorConfirm, twoFactorLogin } from '@/api/auth'
 
 let accessToken = null
 let refreshToken = null
@@ -44,13 +44,43 @@ function endSession() {
   session.loggedOut = false
 }
 
-// Log in. Resolves to { runId }.
+// Log in. Resolves to { runId }, or { runId, mfaRequired: true, mfaToken } when the account
+// uses two-factor: then no session exists yet, and finishLogin() must follow with the code.
 export async function startSession({ email, password }, { trace = false } = {}) {
   previousRefreshToken = null
   const result = await loginAccount({ email, password }, { trace })
+  if (result.mfaRequired) {
+    return { runId: result.runId, mfaRequired: true, mfaToken: result.mfaToken }
+  }
   setTokens(result, { rotated: false })
   return { runId: result.runId }
 }
+
+// Episode 7. Finish a login with the six-digit code (or a recovery code). Resolves to { runId }.
+export async function finishLogin({ mfaToken, code }, { trace = false } = {}) {
+  const result = await twoFactorLogin({ mfaToken, code }, { trace })
+  setTokens(result, { rotated: false })
+  return { runId: result.runId }
+}
+
+// Run a logged-in call; if the access token was refused, refresh once and try again.
+async function withAccess(call) {
+  try {
+    return await call(accessToken)
+  } catch (err) {
+    if (err.status !== 401) throw err
+    await refreshNow()
+    return call(accessToken)
+  }
+}
+
+// Episode 7. Start turning two-factor on. Resolves to { secret, otpauthUri, runId }.
+export const setUpTwoFactor = ({ trace = false } = {}) =>
+  withAccess((token) => twoFactorSetup({ accessToken: token }, { trace }))
+
+// Episode 7. Prove the app works. Resolves to { recoveryCodes, runId }.
+export const confirmTwoFactor = ({ code, trace = false }) =>
+  withAccess((token) => twoFactorConfirm({ accessToken: token, code }, { trace }))
 
 // Swap the refresh token for a new pair. Shares one in-flight refresh. Resolves to { runId }.
 export function refreshNow({ trace = false } = {}) {

@@ -20,6 +20,7 @@ from django.utils import timezone
 from .models import RefreshToken
 
 ACCESS_SALT = "auth-tutorial.access"
+MFA_SALT = "auth-tutorial.mfa"
 
 
 def hash_refresh_token(refresh_token):
@@ -33,6 +34,15 @@ hash_secret = hash_refresh_token
 
 def make_access_token(user):
     return signing.dumps({"uid": user.pk}, salt=ACCESS_SALT)
+
+
+def make_mfa_token(user):
+    """
+    A signed note "the password for user 7 was right, a moment ago". Episode 7's
+    second step presents it with the code. It is NOT a login: it opens nothing
+    except the code check, and it expires after MFA_TOKEN_SECONDS.
+    """
+    return signing.dumps({"uid": user.pk}, salt=MFA_SALT)
 
 
 def new_family():

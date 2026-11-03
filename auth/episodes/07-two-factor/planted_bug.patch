@@ -1,0 +1,15 @@
+--- a/backend/accounts/login.py
++++ b/backend/accounts/login.py
+@@ -155,11 +155,11 @@
+     check_not_locked(email=email)
+     user = check_credentials(email=email, password=password)
+     check_active(user=user)
++    reset_failures(email=email)
+     if check_second_step(user=user):
+         # The password was right, but this is NOT yet a good login, so the failure
+         # count is left alone: it is wiped only when the code is right as well.
+         return start_second_step(user=user)
+-    reset_failures(email=email)
+     return issue_tokens(user=user)
+ 
+ 
