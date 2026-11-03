@@ -19,6 +19,43 @@ Each episode runs the same four-step loop on one flow:
 | 7 | Two-factor (TOTP) | built (`episodes/07-two-factor/`) |
 | 8 | Permissions | built (`episodes/08-permissions/`) |
 
+## Skipping ahead (this is not the aim of the tutorial)
+
+**Read this before you use it.** The point of this series is the loop: draw the
+flow, trace it, test it, break it on purpose, fix it. Finished code teaches almost
+none of that. Copying a working login you did not build leaves you holding code
+you cannot debug, which is exactly where AI-built code goes wrong. Use the tags
+below only if an episode defeats you and you need working code to carry on, or to
+compare your own work against. Then go back and run the episode properly.
+
+Each episode is one commit, and each has a tag:
+
+| Tag | Code as it stands after |
+|---|---|
+| `episode-1-register` | 1 Register (with the Flow and Traces tools) |
+| `episode-2-verify-email` | 2 Verify email |
+| `episode-3-login` | 3 Login |
+| `episode-4-token-refresh` | 4 Token refresh |
+| `episode-5-logout` | 5 Logout |
+| `episode-6-password-reset` | 6 Password reset |
+| `episode-7-two-factor` | 7 Two-factor |
+| `episode-8-permissions` | 8 Permissions: **everything**, the finished series |
+
+To jump to one, put it on a new branch so your own work is never touched:
+
+    git fetch --tags
+    git switch -c skip-ahead episode-5-logout
+
+Then start fresh, because each episode adds database tables and your old database
+will not match:
+
+    cd backend
+    rm db.sqlite3
+    python manage.py migrate
+    cd ../frontend && npm install
+
+To get back to your own work: `git switch main` (or whichever branch you were on).
+
 ## Layout
 
     backend/    Django (port 8200): accounts app, config, tracker (copied in)
@@ -140,7 +177,7 @@ Each `planted_bug.patch` is written against the code as its own episode left it.
 Later episodes change the same files (episode 7 changes `login.py`, for
 instance), so an old patch may no longer apply to a later tree, and an old
 episode's notes describe that episode's tests and trace, not today's. To follow
-an episode, check out the commit it was built at; each episode is one commit.
+an episode, check out its tag (see "Skipping ahead" above); each episode is one commit.
 
 ## Known limits (read this before trusting any of it)
 
