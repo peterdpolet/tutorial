@@ -16,7 +16,7 @@
  * whole login. So every caller shares the single refresh in flight.
  */
 import { reactive } from 'vue'
-import { loginAccount, fetchMe, refreshTokens, logoutAccount, twoFactorSetup, twoFactorConfirm, twoFactorLogin } from '@/api/auth'
+import { loginAccount, fetchMe, refreshTokens, logoutAccount, twoFactorSetup, twoFactorConfirm, twoFactorLogin, adminUsers, adminSetRole } from '@/api/auth'
 
 let accessToken = null
 let refreshToken = null
@@ -82,6 +82,14 @@ export const setUpTwoFactor = ({ trace = false } = {}) =>
 export const confirmTwoFactor = ({ code, trace = false }) =>
   withAccess((token) => twoFactorConfirm({ accessToken: token, code }, { trace }))
 
+// Episode 8. The admin screen's two calls. A 403 is NOT an expired login, so withAccess
+// (which only retries a 401) passes it straight through.
+export const listAccounts = ({ trace = false } = {}) =>
+  withAccess((token) => adminUsers({ accessToken: token }, { trace }))
+
+export const changeRole = ({ userId, role, trace = false }) =>
+  withAccess((token) => adminSetRole({ accessToken: token, userId, role }, { trace }))
+
 // Swap the refresh token for a new pair. Shares one in-flight refresh. Resolves to { runId }.
 export function refreshNow({ trace = false } = {}) {
   if (!refreshing) {
@@ -107,7 +115,7 @@ export async function whoAmI({ trace = false } = {}) {
   try {
     const me = await fetchMe({ accessToken }, { trace })
     note('/me', me.runId)
-    return { email: me.email, refreshed: false, runs }
+    return { email: me.email, role: me.role, refreshed: false, runs }
   } catch (err) {
     note('/me (refused)', err.runId)
     if (err.status !== 401) throw Object.assign(err, { runs })
@@ -117,7 +125,7 @@ export async function whoAmI({ trace = false } = {}) {
     note('refresh', renewed.runId)
     const me = await fetchMe({ accessToken }, { trace })
     note('/me (retry)', me.runId)
-    return { email: me.email, refreshed: true, runs }
+    return { email: me.email, role: me.role, refreshed: true, runs }
   } catch (err) {
     note('refresh (refused)', err.runId)
     throw Object.assign(err, { runs })

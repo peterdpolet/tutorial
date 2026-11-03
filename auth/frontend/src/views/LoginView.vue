@@ -82,8 +82,8 @@ async function askWho() {
     const me = await whoAmI({ trace: trace.value })
     say(
       me.refreshed
-        ? `Access token was refused, so the page refreshed it automatically and tried again. Logged in as ${me.email}.`
-        : `Logged in as ${me.email}.`,
+        ? `Access token was refused, so the page refreshed it automatically and tried again. Logged in as ${me.email} (${me.role}).`
+        : `Logged in as ${me.email} (${me.role}).`,
       { runs: me.runs },
     )
   } catch (err) {

@@ -5,6 +5,7 @@
  *   Register   the real screen (RegisterView.vue)
  *   Login      the real screen (LoginView.vue)
  *   Forgot password   asks for a reset link (ForgotView.vue)
+ *   Admin      the list of accounts and their roles; admins only (AdminView.vue)
  *   /reset?token=...  where the link in the reset email lands (ResetView.vue)
  *   Flow       the process map with a saved trace laid over it   (development only)
  *   Traces     saved traces as a call tree                       (development only)
@@ -18,6 +19,7 @@ import LoginView from '@/views/LoginView.vue'
 import VerifyView from '@/views/VerifyView.vue'
 import ForgotView from '@/views/ForgotView.vue'
 import ResetView from '@/views/ResetView.vue'
+import AdminView from '@/views/AdminView.vue'
 
 const dev = import.meta.env.DEV
 
@@ -30,7 +32,7 @@ if (dev) import('@/dev/devtools.css')
 const onVerifyPage = window.location.pathname === '/verify'
 // Likewise the link in the password-reset email opens /reset?token=...
 const onResetPage = window.location.pathname === '/reset'
-const tab = ref('register')   // 'register' | 'login' | 'forgot' | 'flow' | 'traces'
+const tab = ref('register')   // 'register' | 'login' | 'forgot' | 'admin' | 'flow' | 'traces'
 </script>
 
 <template>
@@ -43,6 +45,7 @@ const tab = ref('register')   // 'register' | 'login' | 'forgot' | 'flow' | 'tra
       <button :class="{ on: tab === 'register' }" @click="tab = 'register'">Register</button>
       <button :class="{ on: tab === 'login' }" @click="tab = 'login'">Log in</button>
       <button :class="{ on: tab === 'forgot' }" @click="tab = 'forgot'">Forgot password</button>
+      <button :class="{ on: tab === 'admin' }" @click="tab = 'admin'">Admin</button>
       <template v-if="dev">
         <button :class="{ on: tab === 'flow' }" @click="tab = 'flow'">Flow</button>
         <button :class="{ on: tab === 'traces' }" @click="tab = 'traces'">Traces</button>
@@ -52,6 +55,7 @@ const tab = ref('register')   // 'register' | 'login' | 'forgot' | 'flow' | 'tra
     <RegisterView v-if="tab === 'register'" />
     <LoginView v-if="tab === 'login'" />
     <ForgotView v-if="tab === 'forgot'" />
+    <AdminView v-if="tab === 'admin'" />
     <FlowView v-if="dev && tab === 'flow'" />
     <TraceViewer v-if="dev && tab === 'traces'" />
     </template>

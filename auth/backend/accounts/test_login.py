@@ -51,7 +51,7 @@ class HappyPathTests(TestCase):
         token = login(self.client).json()["access_token"]
         resp = self.client.get(ME, HTTP_AUTHORIZATION=f"Bearer {token}")
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json(), {"email": EMAIL})
+        self.assertEqual(resp.json(), {"email": EMAIL, "role": "member"})
 
     def test_only_a_hash_of_the_refresh_token_is_stored(self):      # step 6
         refresh = login(self.client).json()["refresh_token"]

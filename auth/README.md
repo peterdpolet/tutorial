@@ -17,7 +17,7 @@ Each episode runs the same four-step loop on one flow:
 | 5 | Logout | built (`episodes/05-logout/`) |
 | 6 | Password reset | built (`episodes/06-password-reset/`) |
 | 7 | Two-factor (TOTP) | built (`episodes/07-two-factor/`) |
-| 8 | Permissions | |
+| 8 | Permissions | built (`episodes/08-permissions/`) |
 
 ## Layout
 
@@ -98,6 +98,24 @@ reopen it: the boxes that ran light up, and "Open in editor" jumps to the line.
 - Passwords, tokens and emails are redacted before anything is stored; every
   episode has a test that proves it.
 
+## Development commands
+
+Small commands in `backend/accounts/management/commands/`, run as
+`python manage.py <name>` from `backend/`. Each one that changes data refuses
+to run unless DEBUG is on, except `make_admin`, which is how a real server
+gets its first admin.
+
+| Command | What it is for |
+|---|---|
+| `show_trace [run id]` | print a saved trace as an indented story |
+| `age_tokens --hours N` | make emailed links look older (episodes 2 and 6) |
+| `expire_sessions` | expire every live refresh token (episode 4) |
+| `clear_locks` | forget failed-login counts and locks (episode 3) |
+| `show_code --email ...` | print the six digits an authenticator app would show (episode 7) |
+| `forget_totp --email ...` | switch two-factor off for an account (episode 7) |
+| `seed_demo` | put three demo accounts (an admin and two members) into a known state (episode 8) |
+| `make_admin --email ...` | make an account an admin, or `--member` to undo it (episode 8) |
+
 ## Where the tests live
 
 One file per episode, in `backend/accounts/`. (Django's default name `tests.py`
@@ -114,6 +132,7 @@ test's name.
 | `test_logout.py` | 5 Logout | 21 |
 | `test_reset.py` | 6 Password reset | 36 |
 | `test_twofactor.py` | 7 Two-factor | 59 |
+| `test_permissions.py` | 8 Permissions | 41 |
 
 ## Planted-bug patches belong to their episode
 

@@ -13,6 +13,7 @@ Episode 6 adds forgot_view (an email in, always the same 200) and reset_view
 (a link token and a new password in, 200 or a 400 the person can fix).
 Episode 7 adds two_factor_setup_view and two_factor_confirm_view (logged in: turn
 two-factor on) and two_factor_login_view (an mfa_token and a code in, tokens out).
+Episode 8 adds admin_users_view and admin_role_view: logged in AND an admin, or a 403.
 """
 import json
 
@@ -22,6 +23,7 @@ from django.views.decorators.http import require_GET, require_POST
 from tracker.tracker import traced
 
 from .login import LoginError, authenticate_access, login
+from .permissions import change_role, list_users, role_of
 from .logout import logout
 from .refresh import refresh
 from .reset import ResetError, request_reset, reset_password
@@ -113,7 +115,7 @@ def me_view(request):
         user = authenticate_access(access_token=access_token.strip())
     except LoginError as exc:
         return JsonResponse({"detail": exc.detail}, status=exc.status)
-    return JsonResponse({"email": user.username})
+    return JsonResponse({"email": user.username, "role": role_of(user=user)})
 
 
 @require_POST
@@ -263,3 +265,28 @@ def two_factor_login_view(request):
     except LoginError as exc:
         return JsonResponse({"detail": exc.detail}, status=exc.status)
     return JsonResponse(tokens)
+
+
+@require_GET
+@traced("admin_users_view")
+def admin_users_view(request):
+    try:
+        actor = _logged_in_user(request)                  # 401 if not logged in
+        result = list_users(actor=actor)                  # 403 if not an admin
+    except LoginError as exc:
+        return JsonResponse({"detail": exc.detail}, status=exc.status)
+    return JsonResponse(result)
+
+
+@require_POST
+@traced("admin_role_view")
+def admin_role_view(request):
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({"detail": "Send a JSON object."}, status=400)
+    try:
+        actor = _logged_in_user(request)
+        result = change_role(actor=actor, user_id=body.get("user_id"), role=body.get("role"))
+    except LoginError as exc:
+        return JsonResponse({"detail": exc.detail}, status=exc.status)
+    return JsonResponse(result)

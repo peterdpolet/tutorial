@@ -82,3 +82,16 @@ class RecoveryCode(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     code_hash = models.CharField(max_length=64, unique=True)
     used_at = models.DateTimeField(null=True, blank=True)
+
+
+class AccountRole(models.Model):
+    """
+    What a person is allowed to do (episode 8). One row per person who has been
+    given a role on purpose; no row means "member".
+
+    The role is read from here on EVERY request. It is not copied into the access
+    token, so a change takes effect on the person's very next request instead of
+    when their 15-minute token runs out.
+    """
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, default="member")

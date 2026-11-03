@@ -256,7 +256,7 @@ class SecondStepHappyPathTests(TwoFactorTestCase):
         tokens = code_login(self.client, self.password_step(), self.code()).json()
         resp = self.client.get(ME, **bearer(tokens["access_token"]))
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json(), {"email": EMAIL})
+        self.assertEqual(resp.json(), {"email": EMAIL, "role": "member"})
 
     def test_the_code_from_the_step_before_is_accepted(self):               # use_totp_code (clock drift)
         self.tick(2)

@@ -49,7 +49,7 @@ class HappyPathTests(RefreshTestCase):
     def test_the_new_access_token_opens_me(self):                    # step 5
         new = refresh(self.client, self.first["refresh_token"]).json()
         resp = self.client.get(ME, HTTP_AUTHORIZATION=f"Bearer {new['access_token']}")
-        self.assertEqual(resp.json(), {"email": EMAIL})
+        self.assertEqual(resp.json(), {"email": EMAIL, "role": "member"})
 
     def test_the_old_token_is_retired_and_the_new_one_joins_its_family(self):    # step 5
         refresh(self.client, self.first["refresh_token"])

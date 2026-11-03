@@ -12,6 +12,8 @@
  *   POST /api/auth/2fa/setup/    (logged in) make an authenticator secret
  *   POST /api/auth/2fa/confirm/  (logged in) prove the app works; get recovery codes
  *   POST /api/auth/2fa/login/    finish a login with the six-digit code (or a recovery code)
+ *   GET  /api/auth/admin/users/  (admin only) every account with its role
+ *   POST /api/auth/admin/role/   (admin only) change an account's role
  *
  * Register returns 201 + {detail}, or 400 + {errors: {field: [reasons]}}.
  * Verify returns 200 + {detail}, or 400 + {errors: {token: [reasons]}}.
@@ -73,13 +75,13 @@ export const loginAccount = async ({ email, password }, { trace = false } = {}) 
 }
 
 // GET /api/auth/me/ with the access token in the Authorization header.
-// Resolves to { email, runId }. Rejects with an Error (.status 401 = not logged in / expired).
+// Resolves to { email, role, runId }. Rejects with an Error (.status 401 = not logged in / expired).
 export const fetchMe = async ({ accessToken }, { trace = false } = {}) => {
   try {
     const res = await api.get('/auth/me/', {
       headers: { Authorization: `Bearer ${accessToken}`, ...(trace ? { 'X-Tracker': '1' } : {}) },
     })
-    return { email: res.data.email, runId: res.headers['x-tracker-run'] ?? null }
+    return { email: res.data.email, role: res.data.role, runId: res.headers['x-tracker-run'] ?? null }
   } catch (err) {
     throw toError(err)
   }
@@ -186,6 +188,34 @@ export const twoFactorLogin = async ({ mfaToken, code }, { trace = false } = {})
       expiresIn: res.data.expires_in,
       runId: res.headers['x-tracker-run'] ?? null,
     }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// Episode 8. Both need a login AND the admin role.
+// 401 = not logged in, 403 = logged in but not an admin.
+
+// GET /api/auth/admin/users/ -> { users: [{ id, email, role, active }], runId }
+export const adminUsers = async ({ accessToken }, { trace = false } = {}) => {
+  try {
+    const res = await api.get('/auth/admin/users/', {
+      headers: { Authorization: `Bearer ${accessToken}`, ...(trace ? { 'X-Tracker': '1' } : {}) },
+    })
+    return { users: res.data.users, runId: res.headers['x-tracker-run'] ?? null }
+  } catch (err) {
+    throw toError(err)
+  }
+}
+
+// POST /api/auth/admin/role/ -> { detail, runId }. 403 not an admin, 404 no such account,
+// 409 that would leave no admin, 400 the request itself made no sense.
+export const adminSetRole = async ({ accessToken, userId, role }, { trace = false } = {}) => {
+  try {
+    const res = await api.post('/auth/admin/role/', { user_id: userId, role }, {
+      headers: { Authorization: `Bearer ${accessToken}`, ...(trace ? { 'X-Tracker': '1' } : {}) },
+    })
+    return { detail: res.data.detail, runId: res.headers['x-tracker-run'] ?? null }
   } catch (err) {
     throw toError(err)
   }

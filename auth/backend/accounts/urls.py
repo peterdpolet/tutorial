@@ -13,5 +13,7 @@ urlpatterns = [
     path("2fa/setup/", views.two_factor_setup_view, name="auth-2fa-setup"),
     path("2fa/confirm/", views.two_factor_confirm_view, name="auth-2fa-confirm"),
     path("2fa/login/", views.two_factor_login_view, name="auth-2fa-login"),
+    path("admin/users/", views.admin_users_view, name="auth-admin-users"),
+    path("admin/role/", views.admin_role_view, name="auth-admin-role"),
     path("me/", views.me_view, name="auth-me"),
 ]
