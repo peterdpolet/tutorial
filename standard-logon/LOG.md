@@ -38,9 +38,19 @@ Decisions and commands, in order, so work can be picked up after a pause.
 - Optional tracker (spadetrack) in the template. Check how `auth/backend/tracker` is copied in and what `auth/spadetrack.json` does.
 - Style the in-page links (they use the browser default; the menu links are styled).
 
+### YouTube gap search (10 Nov 2026)
+
+Seven searches, restricted to youtube.com, via a web search tool (not YouTube's own search). Titles and descriptions only: no view counts, no transcripts, so absence from the results is not proof of absence.
+
+- Nothing found that combines a Django back end, all three front ends (Vue, HTMX, React) and login. The nearest are generic "HTMX vs React vs Vue" opinion videos with no shared back end or login, and a DjangoCon 2022 talk on migrating one product from React to htmx.
+- Django + React JWT login is crowded: several full series, mostly 700 to 1500+ days old. Django + Vue auth has a few (one session-based "no tokens, no DRF", one Djoser JWT). Django + HTMX + allauth has a couple of starter-style videos.
+- 2FA/TOTP results were mostly django-two-factor and the Django admin, 755 to 2741 days old. Nothing found on allauth.mfa, TOTP behind a SPA, or JWT + TOTP.
+- Session vs JWT comparisons exist but are generic, not Django-specific.
+- Reading: the gap is strongest at (a) TOTP/MFA with the current standard tools and (b) the same login across front ends with one shared back end. The React slot is the most crowded, which supports deciding on release 3 only after the Vue release.
+- To do by hand before relying on it: search YouTube itself sorted by upload date, and note view counts for the top Django + Vue and Django + React auth videos.
+
 ### Before filming
 
-- Search YouTube for the "same login, three front ends" gap. Only the web was searched on 9 Nov.
 - Confirm the JWT + TOTP mechanism against current allauth docs, and say on camera that it is an assembled pattern, not a library default.
 
 ### Open questions
