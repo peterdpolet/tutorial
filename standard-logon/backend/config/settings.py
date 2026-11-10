@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "core",     # the shared service layer and the project's own endpoints
 ]
 
 MIDDLEWARE = [
