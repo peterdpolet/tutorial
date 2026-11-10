@@ -16,6 +16,9 @@ Decisions and commands, in order, so work can be picked up after a pause.
 8. Menu driven by the route list in `router.js`; one `StubView` for pages not built yet.
 9. `vue-router` added (the old series switched views by hand).
 10. Work in small chunks: finish, tag, script and record each one before starting the next.
+11. Positioning: lead with security and the end-to-end path (secure logon to secure server in one series), not with "deploy Django on DigitalOcean", which is crowded. See the deployment search below.
+12. Deployment sequence: manual to the server over SSH (episode 3), then deploy via GitHub (episode 4), then deploy via GitHub with Docker (episode 5). Whether episode 5 builds images on the server or in GitHub Actions is decided when we get there.
+13. Launch plan: release the Django + Vue logon series with the three deployment episodes, watch uptake, and say that HTMX and React versions will follow. HTMX can be promised more firmly (after checking spadetrack can trace HTMX requests); React stays conditional on interest, as it needs learning first.
 
 ### Commits
 
@@ -48,6 +51,16 @@ Seven searches, restricted to youtube.com, via a web search tool (not YouTube's 
 - Session vs JWT comparisons exist but are generic, not Django-specific.
 - Reading: the gap is strongest at (a) TOTP/MFA with the current standard tools and (b) the same login across front ends with one shared back end. The React slot is the most crowded, which supports deciding on release 3 only after the Vue release.
 - To do by hand before relying on it: search YouTube itself sorted by upload date, and note view counts for the top Django + Vue and Django + React auth videos.
+
+### YouTube deployment and security search (10 Nov 2026)
+
+Four more youtube.com searches, same method and same limits (titles only, no view counts). This tested the idea that "dev to deploy with security as the focus, in one place" is less well covered.
+
+- Deploying Django to a DigitalOcean droplet with Nginx, Gunicorn and HTTPS is crowded, including recent videos and a long free course covering server creation through Let's Encrypt.
+- Bundled deployment with CI/CD exists, including recent Django + React videos (about 135 to 280 days old).
+- The security pieces exist separately: `check --deploy` checklists (mostly 4 to 6 years old), a generic Linux hardening checklist (about 4 months old), and stand-alone videos on Docker bypassing UFW.
+- Not found: one series that follows a single app from login through deployment with security as the thread, on Vue. Docker/UFW appears only as stand-alone "fix it" videos, not as part of a deployment series.
+- Reading: the opening is the integrated, security-led path, not deployment on its own. Titles and the series introduction should lead with security and the end-to-end angle.
 
 ### Before filming
 
