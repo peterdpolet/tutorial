@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "core",     # the shared service layer and the project's own endpoints
+    "tracker",  # spadetrack: follows one request through the code (off unless enabled)
 ]
 
 MIDDLEWARE = [
@@ -86,6 +87,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Must come after authentication: the tracker asks "who is this user?"
+    # before it decides whether to record the request.
+    "tracker.middleware.TrackerMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -171,6 +175,31 @@ DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", "noreply@example.com")
 
 # Where links in emails point: the Vue dev server while developing.
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:5274")
+
+
+# --- Tracker (spadetrack) ---------------------------------------------------
+# Off unless TRACKER_ENABLED is set in the environment. Even when on, a request
+# is traced only if it also sends the header  X-Tracker: 1  and the rule below
+# says yes. A trace records real values from a live request, so the defaults
+# are strict and every opening is development-only.
+
+TRACKER_ENABLED = env_bool("TRACKER_ENABLED", False)
+
+# Who may trace and who may read traces. The default rule is "logged-in staff
+# only". dev_authorise is that rule PLUS two narrow openings that work only
+# while DEBUG is on and only from this machine; with DEBUG off it behaves
+# exactly like the default, so it is safe to name here on every server.
+TRACKER_AUTHORISE = "tracker.policy.dev_authorise"
+
+# Paths that people who are not logged in may trace (development only). The
+# health check needs no login, so it is the first one we can follow.
+TRACKER_DEV_ANON_PREFIXES = ["/api/health/"]
+
+# Lets the trace viewer answer read requests without a staff login. Follows
+# DEBUG, so it can never be on in production. It is held shut while the tests
+# run: the tracker's own tests check that the viewer is closed unless a test
+# opens it, and they must not depend on what your .env says.
+TRACKER_DEV_ALLOW_VIEWER = DEBUG and "test" not in sys.argv
 
 
 # --- HTTPS ------------------------------------------------------------------

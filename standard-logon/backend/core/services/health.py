@@ -8,13 +8,20 @@ command can call the very same function later without copying the rule.
 """
 from django.db import DatabaseError, connection
 
+from tracker.tracker import checkpoint, traced
 
+
+@traced("Check health")
 def check_health():
     """Return a dict describing the state of the application.
 
     The one real check is a trivial query: if the database answers, the
     application can serve requests; if it does not, we report "degraded"
     rather than raising, so the caller decides how to present that.
+
+    @traced records that this function ran (and when) if the request is being
+    traced; otherwise it does nothing. The checkpoint records the value the
+    decision below rests on.
     """
     try:
         with connection.cursor() as cursor:
@@ -23,6 +30,8 @@ def check_health():
         database = "ok"
     except DatabaseError:
         database = "unavailable"
+
+    checkpoint("database_checked", database=database)
 
     return {
         "status": "ok" if database == "ok" else "degraded",
