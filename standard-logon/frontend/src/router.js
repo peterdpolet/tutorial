@@ -5,6 +5,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import HealthView from '@/views/HealthView.vue'
+import FlowView from '@/views/FlowView.vue'
 import StubView from '@/views/StubView.vue'
 
 const routes = [
@@ -28,6 +29,8 @@ const routes = [
     meta: { label: 'Account', title: 'Your account', episode: 'Episode 2: logon, with two-factor' },
   },
   { path: '/health', name: 'health', component: HealthView, meta: { label: 'Health' } },
+  // spadetrack's Flow view: the code map, with a stored trace laid over it.
+  { path: '/flow', name: 'flow', component: FlowView, meta: { label: 'Flow' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

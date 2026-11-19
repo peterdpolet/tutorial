@@ -1,0 +1,11 @@
+{
+  "project": "standard-logon",
+  "backend": "backend",
+  "apps": [
+    "core"
+  ],
+  "frontend": "frontend",
+  "api_clients": [
+    "client"
+  ]
+}
