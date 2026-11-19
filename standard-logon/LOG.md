@@ -69,3 +69,68 @@ Four more youtube.com searches, same method and same limits (titles only, no vie
 ### Open questions
 
 Domain for HTTPS; where the front end is built; real email for resets; when to move to Postgres; filming order.
+
+## 17 to 19 Nov 2026: the spadetrack hook (in progress)
+
+Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, Vue to Django to service to database). The hook is in and committed locally; the Vue Flow view and the EPC are still to do.
+
+### Decisions
+
+1. **The repo folder moved** from `/home/websites/tutorial` to `/home/websites/tutorial_final`. Same GitHub repo and `origin`. Steps: stop Django and Vite, `mv -T tutorial tutorial_final`, delete and rebuild `standard-logon/.venv` (its scripts hardcode the old path), then `manage.py check` and the tests. `git grep "websites/tutorial"` found only two lines, both in `auth/README.md` (lines 114 and 124). Left alone: `auth/` is finished and tagged.
+2. **The tracker is taken from `auth/backend/tracker`, not from `/opt/websites/spadetrack/tracker`.** `diff -rq` showed one difference, `redaction.py`. The `auth` copy (2 Nov) also redacts `"otp"` and `"recovery"`; the stand-alone copy (29 Oct) does not. The TOTP chunk needs that. Parked: back-port those two names to the stand-alone `spadetrack`.
+3. **`policy.py` needed no change.** It is generic and is configured entirely by settings. The tracker reads exactly five settings: `TRACKER_ENABLED`, `TRACKER_AUTHORISE`, `TRACKER_DEV_ANON_PREFIXES`, `TRACKER_DEV_ALLOW_VIEWER`, `TRACKER_DEV_LOOPBACK_ONLY`. `TRACKER_AUTHORISE` takes a dotted-path string (copied from the working `auth` settings).
+4. **Tracker settings in `standard-logon`:**
+   - `TRACKER_ENABLED` comes from the environment and is off by default (the old series tied it to `DEBUG`). `.env.example` and the local `.env` set `TRACKER_ENABLED=1` for development.
+   - `TRACKER_AUTHORISE = "tracker.policy.dev_authorise"`. With `DEBUG` off it behaves like the staff-only default, so it is safe to name on every server.
+   - `TRACKER_DEV_ANON_PREFIXES = ["/api/health/"]`: nobody logs in at this stage.
+   - `TRACKER_DEV_ALLOW_VIEWER = DEBUG and "test" not in sys.argv`. Held shut while tests run: three of the tracker's own tests expect the viewer to be closed unless a test opens it, and failed when `.env` had `DEBUG` on. Same pattern as the fast password hasher in `settings.py`.
+5. **Marking the health check.** `@traced("Check health")` on `check_health` with a `checkpoint("database_checked", database=...)`; `@traced("Health view")` on `health_view` with a `checkpoint("http_status_chosen", status=..., status_code=...)`. `@require_GET` stays outermost. The architecture rule holds: rules in the service, a thin view.
+6. **Showing a change on camera.** Lines starting `#-` or `//-` show red (Highlight extension, `.vscode/settings.json` in the repo root, ignored by git). The change is two `[[overwrite]]` blocks: first the old line typed back as `#- ...` over the selected line, then the new line typed over the red one. `#-` (like the minus on a removed line in a git diff) was chosen over a bare `#` because every ordinary comment, including narration and the comments already in files like `settings.py`, would otherwise turn red. The first form, `# DEL`, still works.
+
+### Commits
+
+| Commit | What |
+| --- | --- |
+| `a4af601` | Add the spadetrack tracker and mark the health check for tracing (local only, not pushed, not tagged) |
+
+### Checked
+
+- `manage.py check` clean after adding the app, middleware and URLs.
+- `showmigrations tracker`: `0001_initial` and `0002_code_graph` were unapplied; `migrate` applied both (the built-in apps were already migrated).
+- 64 tests, all passing: 6 core health tests (as above) and 58 tracker tests:
+  - `AnonymousRegisterTraceTests` (7), `ArmedTriggerTests` (6), `DevAuthorisePolicyTests` (13), `GraphApiTests` (4), `GraphLoadTests` (7), `GraphQueryTests` (6), `MiddlewareTests` (9), `PolicyTests` (1), `PruneTests` (1), `ReadApiTests` (4).
+- First run had 3 failures, all "the viewer should be closed": `test_viewer_is_closed_unless_switched_on`, `test_never_opens_the_trace_viewer_itself`, `test_anonymous_cannot_read_traces`. Cause: our settings turned the viewer door on whenever `.env` had `DEBUG` on. Fixed as in decision 4.
+- `diff -rq` between the two tracker copies after copying: identical apart from `__pycache__` (deliberately removed from the copy).
+
+### Commands, in order
+
+1. `diff -rq auth/backend/tracker /opt/websites/spadetrack/tracker -x __pycache__ -x '*.pyc'`, then `diff -u` on `redaction.py`.
+2. Stop Django and Vite; `git status --short`; `cd /home/websites && mv -T tutorial tutorial_final`.
+3. In `standard-logon`: `rm -rf .venv && python3 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt`.
+4. In `backend`: `manage.py check` and `manage.py test -v 2`.
+5. `git grep -n "websites/tutorial"`.
+6. `cp -r auth/backend/tracker standard-logon/backend/tracker`, then remove `__pycache__` from the copy; `diff -rq` to compare.
+7. `grep -rho "TRACKER_[A-Z_]*" ... | sort | uniq -c` to list the settings the tracker reads.
+8. Drop-in `settings.py` and `urls.py`, then `.env.example`, `health.py`, `views.py` (each moved from `~/Downloads`, then checked with `grep`).
+9. `manage.py showmigrations tracker`, then `manage.py migrate`.
+10. `printf '\nTRACKER_ENABLED=1\n' >> .env` (local only).
+11. `git add standard-logon`, `git commit -F ~/Downloads/commit-msg-tracker.txt`.
+
+### Tooling notes (VS Code and typer)
+
+- **Red lines.** The Highlight extension matches the pattern against the whole document, so `^` and `$` only match at the start and end of the file. The patterns avoid them and use a lookbehind for "start of a line": `(?<![^\n])[ \t]*(?:#|//)-[^\n]*` for `#-` and `//-` (19 Nov), and `(?<![^\n])[ \t]*(?:#|//|<!--)[ \t]*DEL\b[^\n]*` for the earlier `# DEL` form. Both use `isWholeLine`, so they work on any line. The `DEL` pattern ignores case. A background colour was tried and dropped: red text only.
+- **Typer: `[[overwrite]]` did not replace a selection** unless it was the very first block of the run. Typer sent Escape, Enter and Shift+Home before every line except the first of the run. Escape cancels a selection in VS Code. Fix in `/home/utilities/typer/typer.py`, line 608 (the `type_block` call): `is_first_block=not first_type_done or block["tag"] == "overwrite"` and `add_separator=args.block_separator and block["tag"] != "overwrite"`. Backups: `typer.py.bak` (before the separator edit) and `typer.py.bak2` (before the second edit). The `test_*.py` files in the typer folder are sample input scripts, not automated tests.
+- **Script rules.** A blank line ends a block; use `[[break]]` for a blank line inside one. `[[narrate]]` text is typed into the file, so never put instructions to the presenter in a script.
+- **Presenter gotchas.** Tab Moves Focus mode (Ctrl+M toggles it; the status bar shows it). Caps Lock inverts typed case. A screenshot between selecting and tapping clears the selection. If the hash key gives a backslash, typer left its layout switched: `pkill -INT -f typer.py` restores `gb`.
+
+### Still to do for this chunk
+
+- A first real traced request: `curl` with the header `X-Tracker: 1` against `/api/health/`, then read the stored trace.
+- `standard-logon/spadetrack.json`, then `discover.py` and `manage.py load_graph` to build the code map.
+- Copy `FlowView.vue` and `api/graph.js` from the spadetrack sample into the Vue template, and `npm install @dagrejs/dagre`.
+- Draw the first EPC (health-check flow).
+- Check that spadetrack can trace HTMX requests before promising it on camera.
+- Typer script for this chunk in `standard-logon/episodes/NN-name/`, checked by typing it into a clean copy and running `diff -r` against what was committed.
+- Style the in-page links (carried over from chunk 1).
+- Then tag `standard-logon-2-...`, push `main` and the tag.
+- Parked: back-port the `otp` / `recovery` redaction to `/opt/websites/spadetrack`; add a one-line note to `auth/README.md` about the moved path if wanted.
