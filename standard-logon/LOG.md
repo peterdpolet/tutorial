@@ -70,9 +70,9 @@ Four more youtube.com searches, same method and same limits (titles only, no vie
 
 Domain for HTTPS; where the front end is built; real email for resets; when to move to Postgres; filming order.
 
-## 17 to 19 Nov 2026: the spadetrack hook (in progress)
+## 17 to 19 Nov 2026: the spadetrack hook and the first EPC (in progress)
 
-Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, Vue to Django to service to database). The hook is in and committed locally; the Vue Flow view and the EPC are still to do.
+Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, Vue to Django to service to database). The hook, the code map, the Vue Flow view and the first EPC are all in and committed locally (nothing pushed or tagged yet). Still to do: the typer script, then tag and push.
 
 ### Decisions
 
@@ -86,12 +86,21 @@ Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, 
    - `TRACKER_DEV_ALLOW_VIEWER = DEBUG and "test" not in sys.argv`. Held shut while tests run: three of the tracker's own tests expect the viewer to be closed unless a test opens it, and failed when `.env` had `DEBUG` on. Same pattern as the fast password hasher in `settings.py`.
 5. **Marking the health check.** `@traced("Check health")` on `check_health` with a `checkpoint("database_checked", database=...)`; `@traced("Health view")` on `health_view` with a `checkpoint("http_status_chosen", status=..., status_code=...)`. `@require_GET` stays outermost. The architecture rule holds: rules in the service, a thin view.
 6. **Showing a change on camera.** Lines starting `#-` or `//-` show red (Highlight extension, `.vscode/settings.json` in the repo root, ignored by git). The change is two `[[overwrite]]` blocks: first the old line typed back as `#- ...` over the selected line, then the new line typed over the red one. `#-` (like the minus on a removed line in a git diff) was chosen over a bare `#` because every ordinary comment, including narration and the comments already in files like `settings.py`, would otherwise turn red. The first form, `# DEL`, still works.
+7. **The code map describes the project in `standard-logon/spadetrack.json`:** project `standard-logon`, backend `backend`, apps `["core"]`, frontend `frontend`, API client `client`. `discover.py init` guessed these; `discover.py` then writes `.spadetrack/graph.json` (9 entities, 4 relations) and `manage.py load_graph` loads it into the database.
+8. **`.spadetrack/` is git-ignored** (`standard-logon/.gitignore`), because `discover.py` rebuilds it.
+9. **The Flow view** is the sample's `FlowView.vue` unchanged, plus `api/graph.js` and `api/traces.js`, a `/flow` route labelled Flow, and `@dagrejs/dagre`. `api/client.js` now exports `toError()`, which keeps the status, the server's detail and the `X-Tracker-Run` id. It draws the code map and overlays a stored trace, so a traced health check lights up the Health view and Check health boxes.
+10. **The first EPC** (health check): events are hexagons, functions are rounded boxes, XOR is an oval. Drawn on a Whiteboard, with the real code names (`health_view`, `check_health`) as a second line. Proposed home in the repo: a plain `.svg` beside the typer script in `standard-logon/episodes/NN-name/` (not decided).
 
 ### Commits
 
 | Commit | What |
 | --- | --- |
-| `a4af601` | Add the spadetrack tracker and mark the health check for tracing (local only, not pushed, not tagged) |
+| `a4af601` | Add the spadetrack tracker and mark the health check for tracing |
+| `db56ecc` | Update LOG.md for the spadetrack hook |
+| `25248f4` | Add code map and Flow view for the health check |
+| `2655d22` | Ignore the generated spadetrack code map |
+
+None of these is pushed or tagged yet.
 
 ### Checked
 
@@ -100,6 +109,8 @@ Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, 
 - 64 tests, all passing: 6 core health tests (as above) and 58 tracker tests:
   - `AnonymousRegisterTraceTests` (7), `ArmedTriggerTests` (6), `DevAuthorisePolicyTests` (13), `GraphApiTests` (4), `GraphLoadTests` (7), `GraphQueryTests` (6), `MiddlewareTests` (9), `PolicyTests` (1), `PruneTests` (1), `ReadApiTests` (4).
 - First run had 3 failures, all "the viewer should be closed": `test_viewer_is_closed_unless_switched_on`, `test_never_opens_the_trace_viewer_itself`, `test_anonymous_cannot_read_traces`. Cause: our settings turned the viewer door on whenever `.env` had `DEBUG` on. Fixed as in decision 4.
+- A traced request: `curl` with `X-Tracker: 1` against `/api/health/` returned the `X-Tracker-Run` header, and the stored trace showed Health view > Check health with both checkpoint values.
+- The Flow page in the browser: the code map renders, and the dropdown overlay of the stored trace lights up the traced boxes.
 - `diff -rq` between the two tracker copies after copying: identical apart from `__pycache__` (deliberately removed from the copy).
 
 ### Commands, in order
@@ -115,6 +126,10 @@ Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, 
 9. `manage.py showmigrations tracker`, then `manage.py migrate`.
 10. `printf '\nTRACKER_ENABLED=1\n' >> .env` (local only).
 11. `git add standard-logon`, `git commit -F ~/Downloads/commit-msg-tracker.txt`.
+12. `runserver`, then `curl -i -H "X-Tracker: 1" .../api/health/` and a read of `/api/tracker/runs/<id>/`.
+13. `discover.py init`, then `discover.py`, then `manage.py load_graph`.
+14. In `frontend`: `npm install @dagrejs/dagre`; drop-in `client.js`, `graph.js`, `traces.js`, `router.js`, `FlowView.vue`; `npm run dev`.
+15. Commits `25248f4` (`git add` with the eight files named, then `git commit -F commit-msg-flow.txt`) and `2655d22` (`.gitignore`, using `git commit -m` with `--trailer` for the attribution lines).
 
 ### Tooling notes (VS Code and typer)
 
@@ -125,12 +140,10 @@ Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, 
 
 ### Still to do for this chunk
 
-- A first real traced request: `curl` with the header `X-Tracker: 1` against `/api/health/`, then read the stored trace.
-- `standard-logon/spadetrack.json`, then `discover.py` and `manage.py load_graph` to build the code map.
-- Copy `FlowView.vue` and `api/graph.js` from the spadetrack sample into the Vue template, and `npm install @dagrejs/dagre`.
-- Draw the first EPC (health-check flow).
+- Decide where the EPC `.svg` lives and add it with the typer script.
 - Check that spadetrack can trace HTMX requests before promising it on camera.
+- Optional: a "trace this action" toggle on the Health page so the Vue boxes light up.
 - Typer script for this chunk in `standard-logon/episodes/NN-name/`, checked by typing it into a clean copy and running `diff -r` against what was committed.
 - Style the in-page links (carried over from chunk 1).
-- Then tag `standard-logon-2-...`, push `main` and the tag.
+- Update this log, then tag `standard-logon-2-...`, push `main` and the tag.
 - Parked: back-port the `otp` / `recovery` redaction to `/opt/websites/spadetrack`; add a one-line note to `auth/README.md` about the moved path if wanted.
