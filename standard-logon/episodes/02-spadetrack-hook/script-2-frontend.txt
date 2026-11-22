@@ -1,0 +1,41 @@
+[[code]]
+{
+  "project": "standard-logon",
+  "backend": "backend",
+  "apps": [
+    "core"
+  ],
+  "frontend": "frontend",
+  "api_clients": [
+    "client"
+  ]
+}
+[[break]]
+
+[[overwrite]]
+//- export default axios.create({ baseURL: '/api' })
+
+[[overwrite]]
+const client = axios.create({ baseURL: '/api' })
+
+[[code]]
+[[break]]
+// toError() turns a failed request into an ordinary Error that carries the
+// server's own reason ({detail: "..."}) and, when the request was traced, the
+// id of the saved trace (response header X-Tracker-Run).
+export function toError(err) {
+  const status = err.response?.status
+  const out = new Error(err.response?.data?.detail ?? `Request failed (${status ?? 'no response'})`)
+  out.status = status
+  out.runId = err.response?.headers?.['x-tracker-run'] ?? null
+  return out
+}
+[[break]]
+export default client
+
+[[code]]
+import FlowView from '@/views/FlowView.vue'
+
+[[code]]
+  // spadetrack's Flow view: the code map, with a stored trace laid over it.
+  { path: '/flow', name: 'flow', component: FlowView, meta: { label: 'Flow' } },
