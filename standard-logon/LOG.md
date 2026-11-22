@@ -70,9 +70,9 @@ Four more youtube.com searches, same method and same limits (titles only, no vie
 
 Domain for HTTPS; where the front end is built; real email for resets; when to move to Postgres; filming order.
 
-## 17 to 19 Nov 2026: the spadetrack hook and the first EPC (in progress)
+## 17 to 22 Nov 2026: the spadetrack hook and the first EPC (in progress)
 
-Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, Vue to Django to service to database). The hook, the code map, the Vue Flow view and the first EPC are all in and committed locally (nothing pushed or tagged yet). Still to do: the typer script, then tag and push.
+Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, Vue to Django to service to database). The hook, the code map, the Vue Flow view, the EPC and both typer scripts are done and pushed to `main`. Still to do: a last dry run in the real recording setup, then tag and push the tag.
 
 ### Decisions
 
@@ -90,6 +90,9 @@ Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, 
 8. **`.spadetrack/` is git-ignored** (`standard-logon/.gitignore`), because `discover.py` rebuilds it.
 9. **The Flow view** is the sample's `FlowView.vue` unchanged, plus `api/graph.js` and `api/traces.js`, a `/flow` route labelled Flow, and `@dagrejs/dagre`. `api/client.js` now exports `toError()`, which keeps the status, the server's detail and the `X-Tracker-Run` id. It draws the code map and overlays a stored trace, so a traced health check lights up the Health view and Check health boxes.
 10. **The first EPC** (health check): events are hexagons, functions are rounded boxes, XOR is an oval. Drawn on a Whiteboard, with the real code names (`health_view`, `check_health`) as a second line. Proposed home in the repo: a plain `.svg` beside the typer script in `standard-logon/episodes/NN-name/` (not decided).
+11. **Typer scripts live in `standard-logon/episodes/02-spadetrack-hook/`:** `script-1-backend.txt` (12 blocks: tracker settings, middleware, URLs, `.env.example`, and the traced marks on the health service and view), `script-2-frontend.txt` (6 blocks: `spadetrack.json` typed into a new file, the `client.js` change with a red-line replacement, the `FlowView` import and `/flow` route) and `RUNSHEET.md` (where to put the cursor for each block, the terminal steps between them, and the check command). The new Vue files are copied from `/opt/websites/spadetrack/sample/frontend/src`, with the import in `graph.js` and `traces.js` changed to `@/api/client.js` by `sed`. `package.json` changes through `npm install @dagrejs/dagre@^1.1.8`.
+12. **Pin the dagre version.** Plain `npm install @dagrejs/dagre` now fetches version 3, and `FlowView.vue` is written for 1.x. The rehearsal showed `package.json` differing from the commit.
+13. **The EPC is `epc-health-check.svg`** in the same episode folder: a plain file, with the layout of the Whiteboard drawing. Events are hexagons, functions are rounded boxes, XOR is an oval.
 
 ### Commits
 
@@ -99,8 +102,12 @@ Next chunk: spadetrack hook, then the first EPC diagram (the health-check flow, 
 | `db56ecc` | Update LOG.md for the spadetrack hook |
 | `25248f4` | Add code map and Flow view for the health check |
 | `2655d22` | Ignore the generated spadetrack code map |
+| `2ac9a2f` | Update LOG.md for the code map, Flow view and first EPC |
+| `2db6452` | Add the typer script for the backend half of the spadetrack hook |
+| `f604bc0` | Add the typer script for the front half of the spadetrack hook |
+| `0fbfbb2` | Add the health-check EPC as an SVG |
 
-None of these is pushed or tagged yet.
+`main` was pushed at `2db6452` and `f604bc0` (22 Nov). Not tagged yet.
 
 ### Checked
 
@@ -111,6 +118,7 @@ None of these is pushed or tagged yet.
 - First run had 3 failures, all "the viewer should be closed": `test_viewer_is_closed_unless_switched_on`, `test_never_opens_the_trace_viewer_itself`, `test_anonymous_cannot_read_traces`. Cause: our settings turned the viewer door on whenever `.env` had `DEBUG` on. Fixed as in decision 4.
 - A traced request: `curl` with `X-Tracker: 1` against `/api/health/` returned the `X-Tracker-Run` header, and the stored trace showed Health view > Check health with both checkpoint values.
 - The Flow page in the browser: the code map renders, and the dropdown overlay of the stored trace lights up the traced boxes.
+- Both typer scripts, rehearsed in a clean `git worktree` of `standard-logon-1-template`: every typed file was identical to the committed one (`diff` printed nothing). Part 1: `settings.py`, `urls.py`, `.env.example`, `health.py`, `views.py`. Part 2: `spadetrack.json`, `client.js`, `router.js`, `graph.js`, `traces.js`, `FlowView.vue`, `package.json`.
 - `diff -rq` between the two tracker copies after copying: identical apart from `__pycache__` (deliberately removed from the copy).
 
 ### Commands, in order
@@ -138,12 +146,22 @@ None of these is pushed or tagged yet.
 - **Script rules.** A blank line ends a block; use `[[break]]` for a blank line inside one. `[[narrate]]` text is typed into the file, so never put instructions to the presenter in a script.
 - **Presenter gotchas.** Tab Moves Focus mode (Ctrl+M toggles it; the status bar shows it). Caps Lock inverts typed case. A screenshot between selecting and tapping clears the selection. If the hash key gives a backslash, typer left its layout switched: `pkill -INT -f typer.py` restores `gb`.
 
+### Typer scripts for changing existing files (how it works)
+
+- **Method.** Turn each run of `+` lines in `git diff <tag> HEAD -- <files>` into one `[[code]]` block. Each block has an anchor line: put the cursor at the end of it and tap Right Ctrl; typer opens a new line below and types the block there. A leading `[[break]]` leaves a blank line before the text; a blank line inside a block is also `[[break]]`. A changed line is the red-line pair of `[[overwrite]]` blocks (`#-` or `//-`). No `[[narrate]]` blocks in a script that is checked, because they are typed into the file.
+- **Run with `--no-block-separator`.** Without it typer adds a blank line before every block.
+- **First block is special.** Typer opens the new line and clears the auto-indent for every block except the first, so for the first block press Enter then Backspace by hand (not needed in an empty new file).
+- **VS Code settings:** Editor: Auto Closing Quotes and Auto Closing Brackets both set to `never`. The quotes setting fixed a stray `"` at the end of one line.
+- **Focus.** Typer types into whichever window has focus. Click into the editor before every tap, and touch nothing until the terminal prints `done`. Clicking the Claude chat mid-block sent half the text there; run typer in a separate terminal window, not VS Code's own.
+- **Saving.** Typing does not save: Ctrl+S on each file before running the check.
+- **Rehearsal.** `git worktree add ../rehearsal <tag>`, type into that, then `diff` each file against the committed one; remove it with `git worktree remove --force ../rehearsal`. The worktree has no `.vscode/settings.json` (git-ignored), so the red lines do not show there; they will in the real folder.
+- **Git pager.** `git diff` opened `less`, which ignores Ctrl+C. Fixed with `git config --global core.pager cat`.
+- **Downloads.** Files sometimes take a moment to arrive: `ls -lt ~/Downloads | head` shows the newest.
+
 ### Still to do for this chunk
 
-- Decide where the EPC `.svg` lives and add it with the typer script.
+- A last dry run of both scripts in the real recording folder (for the red `//-` line), then tag `standard-logon-2-spadetrack` and push the tag.
 - Check that spadetrack can trace HTMX requests before promising it on camera.
 - Optional: a "trace this action" toggle on the Health page so the Vue boxes light up.
-- Typer script for this chunk in `standard-logon/episodes/NN-name/`, checked by typing it into a clean copy and running `diff -r` against what was committed.
 - Style the in-page links (carried over from chunk 1).
-- Update this log, then tag `standard-logon-2-...`, push `main` and the tag.
 - Parked: back-port the `otp` / `recovery` redaction to `/opt/websites/spadetrack`; add a one-line note to `auth/README.md` about the moved path if wanted.
